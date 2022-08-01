@@ -217,14 +217,14 @@ if __name__ == '__main__':
 
     reconst_path, arrive_time = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],
                                                  speed=1, TaskID=0, endtime_lasttask=0)
-    reconst_path1, arrive_time1=a_star_algorithm(graph, Task_list.loc[0, 'End node'], Task_list.loc[1, 'Start node'], speed=1, TaskID=0,
+    reconst_path1, arrive_time_back=a_star_algorithm(graph, Task_list.loc[0, 'End node'], Task_list.loc[1, 'Start node'], speed=1, TaskID=0,
                      endtime_lasttask=arrive_time[Task_list.loc[0, 'End node']])
 
     for i in range(1,5):
         #previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=Task_list.loc[i,'Start node'])
         #generate_result(previous_nodes, shortest_path, start_node=Task_list.loc[i,'Start node'], target_node=Task_list.loc[i,'End node'])
-        reconst_path,arrive_time=a_star_algorithm(graph,Task_list.loc[i,'Start node'],Task_list.loc[i,'End node'],speed=1,TaskID=i,endtime_lasttask=arrive_time1[Task_list.loc[i, 'Start node']])
-        reconst_path, arrive_time1=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i+1, 'Start node'], speed=1, TaskID=i,endtime_lasttask=arrive_time[Task_list.loc[i, 'End node']])
+        reconst_path,arrive_time=a_star_algorithm(graph,Task_list.loc[i,'Start node'],Task_list.loc[i,'End node'],speed=1,TaskID=i,endtime_lasttask=arrive_time_back[Task_list.loc[i, 'Start node']])
+        reconst_path, arrive_time_back=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i+1, 'Start node'], speed=1, TaskID=i,endtime_lasttask=arrive_time[Task_list.loc[i, 'End node']])
     #previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=57)
     #generate_result(previous_nodes, shortest_path, start_node=57, target_node=122)
 

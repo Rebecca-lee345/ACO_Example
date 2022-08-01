@@ -23,38 +23,24 @@ BETA:Beta值越大，蚁群越就容易选择局部较短路径，这时算法�
 Ant_num = 6
 
 # Input task list
-Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols="A:G", skiprows=0, nrows=141, dtype=object)
-#Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols=[0, 3, 6, 7, 8], skiprows=0, nrows=6,
-                          #dtype=object)
+Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8], skiprows=0, nrows=18, dtype=object)
+Task_list_routing = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist_routing', usecols=[0,3,6,7,8], skiprows=0, nrows=120, dtype=object)
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 
-
 # Parameters definition
-Line = list(range(0, 3))  # the number of lines in the roadmap
-Stop = list(range(0, 450))  # the number of stops in each line
+#Line = list(range(0, 3))  # the number of lines in the roadmap
+#Stop = list(range(0, 450))  # the number of stops in each line
 Forklifts = list(range(0, 2))  # the number of forklifts
 AGVs = list(range(0, 4))  # the number of AGVs
 Tasks = Task_list['Task ID'].tolist()  # the task ID
-H = list(range(0, 600))  # the avaulable time (s), for now 1 hour
+#H = list(range(0, 600))  # the avaulable time (s), for now 1 hour
 
 # pheromone matrix & Ant visibility matrix
 pheromone_graph = [[1.0 for col in Tasks] for raw in Tasks]
 visibility_graph = [[0.0 for col in Tasks] for raw in Tasks]
-'''
-# 创建一个txt文件，文件名为mytxtfile
-def text_create(name):
-    desktop_path = "C:\\Users\\Administrator\\PycharmProjects\\EmotionRecog\\venv\\Scripts\\src\\mylog\\"
-    # 新创建的txt文件的存放路径
-    full_path = desktop_path + name + '.txt'  # 也可以创建一个.doc的word文档
-    file = open(full_path, 'w')
 
-filename = 'log'
-text_create(filename)
-output = sys.stdout
-outputfile = open("C:\\Users\\Administrator\\PycharmProjects\\EmotionRecog\\venv\\Scripts\\src\\mylog\\" + filename + '.txt', 'w')
-sys.stdout = outputfile
-'''
+
 # -----Ants-----
 class Ant(object):
     # Initial
@@ -114,7 +100,6 @@ class Ant(object):
                  if self.open_table_task[i]:
                      next_task = i
                      break
-
         if (next_task == -1):
             next_task = random.randint(0, len(Tasks) - 1)
             while ((self.open_table_task[next_task]) == False):  # if==False,说明已经遍历过了
@@ -166,7 +151,7 @@ class SCHEDULING(object):
         # randomly assign a value to the distance between different tasks
         for i in Tasks:
             for j in Tasks:
-                temp_distance = random.randint(1, 450)
+                temp_distance = random.randint(225, 450)
                 visibility_graph[i][j] = float(int(temp_distance + 0.5))
 
         self.search_path()
@@ -177,8 +162,8 @@ class SCHEDULING(object):
         Task_list_AGV.loc[:, 'check_status'] = True
         for ant in self.ants:
             ant.path = []
-            ant.total_distance = 0
             ant.current_task = -1
+            ant.total_distance = 0
             # task_index = random.randint(0, len(Tasks) - 1)  # generate the start point randomly
             task_index += 3
             ant.current_task = task_index
@@ -308,7 +293,7 @@ class SCHEDULING(object):
                     # next_task=ant.search_path()
                     if next_task != -1:
                         ant.path.append(next_task)
-                        self.total_distance += visibility_graph[ant.current_task][next_task]
+                        ant.total_distance += visibility_graph[ant.current_task][next_task]
                         ant.current_task = next_task
                         self.move_count += 1
                         # 与当前最优蚂蚁比较
@@ -321,16 +306,16 @@ class SCHEDULING(object):
                         ant.path.append(next_task)
                         #print(u"the index of iteration：", self.iter, u"Vehicle task list：", ant.path, ant.current_task,
                               #u"Total completion time：", self.total_distance)
-            #vehicle_tasklist = {}
-            '''
-            vehicle_tasklist = {1:{},2:{},3:{},4:{},5:{},6:{}}
+            self.vehicle_tasklist = {1:{},2:{},3:{},4:{},5:{},6:{}}
 
             a=1
             for ant in self.ants:
-                vehicle_tasklist[a]=ant.path
-                print('-----the task list of vehicle',a, 'is-----',ant.path)
+                self.vehicle_tasklist[a]=ant.path
+                if self.total_distance <= ant.total_distance:
+                    self.total_distance = ant.total_distance
+
+                print('-----the task list of vehicle',a, 'is-----',ant.path,ant.total_distance)
                 a+=1
-'''
 
 
             #record the completion time of each iteration
@@ -343,12 +328,12 @@ class SCHEDULING(object):
             self.__update_pheromone_gragh()
             print(u"迭代次数：", self.iter, self.total_completion_time)
             self.iter += 1
-            if self.iter == 100:
+            if self.iter == 2:
                 print(self.total_completion_time)
-                print(u"the best iteration：", self.best_iteration, u"The optimal total completion time：", self.best_distance)
+                print(u"the best iteration：", self.best_iteration, u"The optimal total completion time：",self.best_distance)
                 self.__iteration_visulazation()
+                return self.vehicle_tasklist
                 break
-            return
 
     # update the pheromone
     def __update_pheromone_gragh(self):
@@ -371,8 +356,7 @@ class SCHEDULING(object):
         x=range(0,self.iter-1)
         y=self.total_completion_time
         plt.plot(x, y)
-        plt.xlabel('The iteration')
-        plt.ylabel('The makespan of the operation')
+        plt.legend('ABCDEF', ncol=2, loc='upper left');
         plt.show()
         # Create a visualization
         '''
@@ -383,6 +367,8 @@ class SCHEDULING(object):
             facet_kws=dict(sharex=False),
         )
         '''
+        # ----------- main -----------
+
 class Graph(object):
     def __init__(self, nodes, init_graph):
         self.nodes = nodes
@@ -492,7 +478,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
     closed_lst = set([])
 
     arrive_time_lst = {}
-    for id in range(0,500):
+    for id in range(-1,150):
         arrive_time_lst[id] = {}
 
     # dis_start has present distances from start to all other nodes
@@ -530,7 +516,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
             for i in range(1,len(reconst_path)):
                 arrive_time_lst[TaskID][reconst_path[i]] = 2 / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
 
-            print('Path found: {}'.format(reconst_path))
+            print('Path found for task',TaskID,':',reconst_path)
             print('The arrive time of each point',arrive_time_lst[TaskID])
             return reconst_path,arrive_time_lst[TaskID]
 
@@ -582,14 +568,66 @@ if __name__ == '__main__':
 
     graph = Graph(nodes, init_graph)
     #scheduling the task
-    SCHEDULING()
+    Task_assignment = SCHEDULING()
     #outputfile.close()  # close后才能看到写入的数据
+    Task_assignment_result=Task_assignment.vehicle_tasklist
+    from collections import defaultdict
+
+
 
     #Route planning
-    '''
+    arrive_time = {}
+    arrive_time_back = {}
+    for vehicle in range(1,7):
+        arrive_time[vehicle] = {}
+        arrive_time_back[vehicle] = {}
+    for id in range(-1,150):
+        arrive_time[vehicle][id] = {}
+        arrive_time_back[vehicle][id] ={}
+
+    #the begining 6 tasks for each vehicle
     for i in range(1,17,3):
-        reconst_path, arrive_time = a_star_algorithm(graph, Task_list.loc[i, 'Start node'], Task_list.loc[i, 'End node'],
+        reconst_path, arrive_time[(i+2)/3][i] = a_star_algorithm(graph, Task_list.loc[i, 'Start node'], Task_list.loc[i, 'End node'],
                                                      speed=1, TaskID=i, endtime_lasttask=0)
-        reconst_path_back, arrive_time_back=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i, 'Start node'], speed=1, TaskID=0,
-                         endtime_lasttask=arrive_time[Task_list.loc[i, 'End node']])
+        reconst_path_back, arrive_time_back[(i+2)/3][i]=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i, 'Start node'], speed=1, TaskID=i,
+                         endtime_lasttask=arrive_time[(i+2)/3][i][Task_list.loc[i, 'End node']])
+    #the rest tasks
+    for j in range(1,len(Task_assignment_result[1])-1):
+        for vehicle in range(1,7):
+            reconst_path, arrive_time[vehicle][Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                         Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'], speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                         endtime_lasttask=arrive_time_back[vehicle][Task_assignment_result[vehicle][j-1]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node']])
+            reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                          Task_list_routing.loc[Task_assignment_result[vehicle][j+1] , 'Start node'], speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                          endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']])
+
+    '''
+    for j in range(1,len(Task_assignment_result[1])-1):
+        for vehicle in range(1,7):
+            if Task_assignment_result[vehicle][j]!=-1 and Task_assignment_result[vehicle][j+1]!=-1: #-1 vehicle idle time 6 min=360s
+                reconst_path, arrive_time[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                             Task_list.loc[Task_assignment_result[vehicle][j], 'End node'], speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                             endtime_lasttask=arrive_time_back[Task_assignment_result[vehicle][j-1]][Task_list.loc[Task_assignment_result[vehicle][j], 'Start node']])
+                reconst_path_back, arrive_time_back[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                              Task_list.loc[Task_assignment_result[vehicle][j+1] , 'Start node'], speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                              endtime_lasttask=arrive_time[Task_assignment_result[vehicle][j]][Task_list.loc[Task_assignment_result[vehicle][j], 'End node']])
+            elif Task_assignment_result[vehicle][j]!=-1 and Task_assignment_result[vehicle][j+1]==-1:
+                reconst_path, arrive_time[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                             Task_list.loc[Task_assignment_result[vehicle][j], 'End node'], speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                             endtime_lasttask=arrive_time_back[Task_assignment_result[vehicle][j-1]][Task_list.loc[Task_assignment_result[vehicle][j], 'Start node']])
+                reconst_path_back, arrive_time_back[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                              0, speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                              endtime_lasttask=arrive_time[Task_assignment_result[vehicle][j]][Task_list.loc[Task_assignment_result[vehicle][j], 'End node']])
+            elif Task_assignment_result[vehicle][j]==-1 and Task_assignment_result[vehicle][j+1]!=-1:
+                reconst_path, arrive_time[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, 0,0, speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                             endtime_lasttask=arrive_time_back[Task_assignment_result[vehicle][j-1]][Task_list.loc[Task_assignment_result[vehicle][j], 'Start node']])
+                reconst_path_back, arrive_time_back[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                              0, speed=1, TaskID=Task_assignment_result[vehicle][j],
+                                                              endtime_lasttask=arrive_time[Task_assignment_result[vehicle][j]][Task_list.loc[Task_assignment_result[vehicle][j], 'End node']])
+            else:
+                reconst_path, arrive_time[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, 0,0,speed=1, TaskID=-1,
+                                                             endtime_lasttask=arrive_time_back[Task_assignment_result[vehicle][j]][Task_list.loc[Task_assignment_result[vehicle][j], 'Start node']]+360)
+                #reconst_path_back, arrive_time_back[Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                              #Task_list.loc[Task_assignment_result[vehicle][j + 1], 'Start node'],speed=1, TaskID=-1,
+                                                              #endtime_lasttask=arrive_time[Task_assignment_result[vehicle][j]][Task_list.loc[Task_assignment_result[vehicle][j], 'End node']]+360)
     '''

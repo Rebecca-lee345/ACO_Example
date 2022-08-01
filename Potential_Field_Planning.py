@@ -1,260 +1,372 @@
-"""
-
-Grid based Dijkstra planning
-
-author: Atsushi Sakai(@Atsushi_twi)
-
-"""
-
-import matplotlib.pyplot as plt
+# -*- coding: utf-8 -*-
+import random
+import copy
+import time
+import sys
 import math
+import tkinter  # //GUI模块
+import threading
+from functools import reduce
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+# 参数
+'''
+ALPHA:信息启发因子，值越大，则蚂蚁选择之前走过的路径可能性就越大
+      ，值越小，则蚁群搜索范围就会减少，容易陷入局部最优
+BETA:Beta值越大，蚁群越就容易选择局部较短路径，这时算法收敛速度会
+     加快，但是随机性不高，容易得到局部的相对最优
+'''
+(ALPHA, BETA, RHO, Q) = (1.0, 2.0, 0.5, 100.0)
+# ----Ant----
+Ant_num = 6
 
-show_animation = True
+# Input task list
+Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols="A:G", skiprows=0, nrows=141, dtype=object)
+Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
+Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
+
+# Task_list_Forklift = Task_list_Forklift.astype({'Task ID': 'int32'}).dtypes
+
+# Parameters definition
+Line = list(range(0, 3))  # the number of lines in the roadmap
+Stop = list(range(0, 450))  # the number of stops in each line
+Forklifts = list(range(0, 2))  # the number of forklifts
+AGVs = list(range(0, 4))  # the number of AGVs
+Tasks = Task_list['Task ID'].tolist()  # the task ID
+H = list(range(0, 600))  # the avaulable time (s), for now 1 hour
+
+# pheromone matrix & Ant visibility matrix
+pheromone_graph = [[1.0 for col in Tasks] for raw in Tasks]
+visibility_graph = [[0.0 for col in Tasks] for raw in Tasks]
 
 
-class Dijkstra:
+# -----Ants-----
+class Ant(object):
+    # Initial
+    def __init__(self, ID):
+        self.ID = ID  # ID
+        self.__clean_data()  # generate the start point randomly
 
-    def __init__(self, ox, oy, resolution, robot_radius):
-        """
-        Initialize map for a star planning
+    # Initial the data
+    def __clean_data(self):
+        self.path = []  # current ants path
+        self.total_distance = 0.0  # current total distance
+        self.move_count = 0  # #of moves
+        self.current_task = -1  # current stay task
+        self.open_table_task = [True for i in Tasks]  # explore the status of the task
+        task_index = random.randint(0, len(Tasks) - 1)  # generate the start point randomly
+        self.current_task = task_index
+        self.path.append(task_index)
+        self.open_table_task[task_index] = False
+        self.move_count = 1
 
-        ox: x position list of Obstacles [m]
-        oy: y position list of Obstacles [m]
-        resolution: grid resolution [m]
-        rr: robot radius[m]
-        """
+    # choose next task
+    def __choice_next_task(self):
+        next_task = -1
+        select_tasks_prob = [0.0 for i in Tasks]  # store the probability of choosing next task
+        total_prob = 0.0
+        # get the probability of choosing next task
 
-        self.min_x = None
-        self.min_y = None
-        self.max_x = None
-        self.max_y = None
-        self.x_width = None
-        self.y_width = None
-        self.obstacle_map = None
+        for i in Tasks:
+            if self.open_table_task[i]:
+                try:
+                    # Calculate the probability
+                    # 计算概率：与信息素浓度成正比，与距离成反比
+                    select_tasks_prob[i] = pow(pheromone_graph[self.current_task][i], ALPHA) * pow(
+                        (1.0 / visibility_graph[self.current_task][i]), BETA)
+                    total_prob += select_tasks_prob[i]
+                except ZeroDivisionError as e:
+                    print('Ant ID: {ID}, current task: {current}, target task: {target}'.format(ID=self.ID,
+                                                                                                current=self.current_task,
+                                                                                                target=i))
+                    sys.exit(1)
 
-        self.resolution = resolution
-        self.robot_radius = robot_radius
-        self.calc_obstacle_map(ox, oy)
-        self.motion = self.get_motion_model()
+        # 轮盘选择城市
+        if total_prob > 0.0:
+            # 产生一个随机概率,0.0-total_prob
+            temp_prob = random.uniform(0.0, total_prob)
+            for i in Tasks:
+                if self.open_table_task[i]:
+                    # 轮次相减
+                    temp_prob -= select_tasks_prob[i]
+                    if temp_prob < 0.0:
+                        next_task = i
+                        break
+        # without selecting the task according to the probability, randomly choose a task
+        '''
+        if next_task == -1:
+             for i in Tasks:
+                 if self.open_table_task[i]:
+                     next_task = i
+                     break
+        if (next_task == -1):
+            next_task = random.randint(0, len(Tasks) - 1)
+            while ((self.open_table_task[next_task]) == False):  # if==False,说明已经遍历过了
+                next_task = random.randint(0,len(Tasks) - 1)
+        '''
+        # return to next task id
+        return next_task
 
-    class Node:
-        def __init__(self, x, y, cost, parent_index):
-            self.x = x  # index of grid
-            self.y = y  # index of grid
-            self.cost = cost
-            self.parent_index = parent_index  # index of previous Node
+    # calculate the total distance(completion time)
+    def __cal_total_distance(self):
+        temp_distance = 0.0
+        for i in range(1, len(self.path)):
+            start, end = self.path[i], self.path[i - 1]
+            temp_distance += visibility_graph[start][end]
+        # 回路
+        end = self.path[0]
+        temp_distance += visibility_graph[start][end]
+        self.total_distance = temp_distance
 
-        def __str__(self):
-            return str(self.x) + "," + str(self.y) + "," + str(
-                self.cost) + "," + str(self.parent_index)
+    # ants movement
+    def __move(self, next_task):
+        self.path.append(next_task)
+        self.open_table_task[next_task] = False
+        self.total_distance += visibility_graph[self.current_task][next_task]
+        self.current_task = next_task
+        self.move_count += 1
 
-    def planning(self, sx, sy, gx, gy):
-        """
-        dijkstra path search
+    # search for the path
+    def search_path(self):
+        # initial the data
+        # self.__clean_data()
+        # search for the path until all the tasks have been assigned
+        # while any(self.open_table_task) == True:
+        # move to next task
+        next_task = self.__choice_next_task()
+        # self.__move(next_task)
+        # calculate the total distance
+        # self.__cal_total_distance()
+        return next_task
 
-        input:
-            s_x: start x position [m]
-            s_y: start y position [m]
-            gx: goal x position [m]
-            gx: goal x position [m]
 
-        output:
-            rx: x position list of the final path
-            ry: y position list of the final path
-        """
+# -----Scheduling-----
+class SCHEDULING(object):
+    def __init__(self, n=len(Tasks)):
+        self.new()
+        # #of tasks is the length of tasks
+        self.n = n
 
-        start_node = self.Node(self.calc_xy_index(sx, self.min_x),
-                               self.calc_xy_index(sy, self.min_y), 0.0, -1)
-        goal_node = self.Node(self.calc_xy_index(gx, self.min_x),
-                              self.calc_xy_index(gy, self.min_y), 0.0, -1)
+        # randomly assign a value to the distance between different tasks
+        for i in Tasks:
+            for j in Tasks:
+                temp_distance = random.randint(1, 450)
+                visibility_graph[i][j] = float(int(temp_distance + 0.5))
 
-        open_set, closed_set = dict(), dict()
-        open_set[self.calc_index(start_node)] = start_node
+        self.search_path()
 
-        while 1:
-            c_id = min(open_set, key=lambda o: open_set[o].cost)
-            current = open_set[c_id]
+    def __clean_data(self):
+        task_index = -2
+        Task_list_Forklift.loc[:, 'check_status'] = True
+        Task_list_AGV.loc[:, 'check_status'] = True
+        for ant in self.ants:
+            ant.path = []
+            ant.current_task = -1
+            ant.total_distance = 0
+            # task_index = random.randint(0, len(Tasks) - 1)  # generate the start point randomly
+            task_index += 3
+            ant.current_task = task_index
+            ant.path.append(task_index)
+            if Task_list.at[ant.current_task, 'Task type'] == 'C04_CMD':
+                Task_list_Forklift.loc[task_index, 'check_status'] = False
+            else:
+                Task_list_AGV.loc[task_index, 'check_status'] = False
 
-            # show graph
-            if show_animation:  # pragma: no cover
-                plt.plot(self.calc_position(current.x, self.min_x),
-                         self.calc_position(current.y, self.min_y), "xc")
-                # for stopping simulation with the esc key.
-                plt.gcf().canvas.mpl_connect(
-                    'key_release_event',
-                    lambda event: [exit(0) if event.key == 'escape' else None])
-                if len(closed_set.keys()) % 10 == 0:
-                    plt.pause(0.001)
+        # self.path = []               #  current ants path
+        self.total_distance = 1.0  # current total distance
+        self.move_count = 6  # #of moves
+        # self.current_task = -1       # current stay task
+        # self.open_table_task = [True for i in Tasks] # explore the status of the task
+        # task_index = random.randint(0,len(Tasks)-1) # generate the start point randomly
+        # self.current_task = task_index
+        # self.path.append(task_index)
+        # self.open_table_task[task_index] = False
+        # self.move_count = 1
 
-            if current.x == goal_node.x and current.y == goal_node.y:
-                print("Find goal")
-                goal_node.parent_index = current.parent_index
-                goal_node.cost = current.cost
+    # Initial
+    def new(self):
+        # 初始城市之间的距离和信息素
+        for i in Tasks:
+            for j in Tasks:
+                pheromone_graph[i][j] = 1.0
+        self.ants = [Ant(ID) for ID in range(Ant_num)]  # initial ants group
+        # self.best_ant = Ant(-1)                          # 初始最优解
+        # self.best_ant.total_distance = 1 << 31           # 初始最大距离
+        self.iter = 1  # initial the iteration number
+
+    # search
+    def search_path(self, evt=None):
+        # start run
+        self.__running = True
+        self.total_completion_time=[]
+        self.best_distance = 1000000000
+        self.best_iteration = 1
+        while self.__running:
+            self.__clean_data()
+            while self.move_count < len(Tasks):
+                # while any(Task_list_Forklift['check_status']) or any(Task_list_AGV['check_status']) == True:
+                # visit each ant
+                for ant in self.ants:
+                    # print(u"迭代次数：", self.iter, ant.path)
+                    select_tasks_prob = [0.0 for i in Tasks]  # store the probability of choosing next task
+                    total_prob = 0.0
+                    if any(Task_list_Forklift['check_status']) or any(Task_list_AGV['check_status']):
+                        # search next task
+                        # print(ant.current_task)
+                        next_task = -1
+                        if Task_list.at[ant.current_task, 'Task type'] == 'C04_CMD':
+                            for i in Task_list_Forklift['Task ID'].tolist():
+                                if Task_list_Forklift.at[i, 'check_status'] == True:
+                                    try:
+                                        # Calculate the probability
+                                        select_tasks_prob[i] = pow(pheromone_graph[ant.current_task][i], ALPHA) * pow(
+                                            (1.0 / visibility_graph[ant.current_task][i]), BETA)
+                                        total_prob += select_tasks_prob[i]
+                                    except ZeroDivisionError as e:
+                                        print('Ant ID: {ID}, current task: {current}, target task: {target}'.format(
+                                            ID=ant.ID, current=ant.current_task, target=i))
+                                        sys.exit(1)
+                            # 轮盘堵选择task
+                            if total_prob > 0.0:
+                                # generate a random probability,0.0-total_prob
+                                temp_prob = random.uniform(0.0, total_prob)
+                                for i in Task_list_Forklift['Task ID'].tolist():
+                                    if Task_list_Forklift.at[i, 'check_status'] == True:
+                                        # 轮次相减
+                                        temp_prob -= select_tasks_prob[i]
+                                        if temp_prob < 0.0:
+                                            next_task = i
+                                            break
+                                    else:
+                                        continue
+                            if next_task != -1:
+                                Task_list_Forklift.loc[next_task, 'check_status'] = False
+
+                        # AGV task scheduling
+                        elif Task_list.at[ant.current_task, 'Task type'] != 'C04_CMD' and any(
+                                Task_list_AGV['check_status']):
+                            # check if predecessors has been visted or not
+                            for i in Task_list_AGV['Task ID'].tolist():
+                                if Task_list_AGV.at[i, 'check_status'] == True:
+                                    try:
+                                        # Calculate the probability
+                                        select_tasks_prob[i] = pow(pheromone_graph[ant.current_task][i], ALPHA) * pow(
+                                            (1.0 / visibility_graph[ant.current_task][i]), BETA)
+                                        total_prob += select_tasks_prob[i]
+                                    except ZeroDivisionError as e:
+                                        print('Ant ID: {ID}, current task: {current}, target task: {target}'.format(
+                                            ID=ant.ID, current=ant.current_task, target=i))
+                                        sys.exit(1)
+                            # 轮盘堵选择task
+                            if total_prob > 0.0:
+                                # generate a randon probability,0.0-total_prob
+                                temp_prob = random.uniform(0.0, total_prob)
+                                for i in Task_list_AGV['Task ID'].tolist():
+                                    front_task = int(Task_list.at[i, 'Predecessors'])
+                                    if front_task == 0:
+                                        if Task_list_AGV.at[i, 'check_status']:
+                                            # 轮次相减
+                                            temp_prob -= select_tasks_prob[i]
+                                            if temp_prob < 0.0:
+                                                next_task = i
+                                                break
+                                        else:
+                                            continue
+                                    elif Task_list_AGV.at[i, 'check_status'] and Task_list_Forklift.at[
+                                        front_task, 'check_status'] == False:
+                                        # 轮次相减
+                                        temp_prob -= select_tasks_prob[i]
+                                        if temp_prob < 0.0:
+                                            next_task = i
+                                            print(next_task)
+                                            break
+                                    else:
+                                        continue
+                            if next_task != -1:
+                                Task_list_AGV.loc[next_task, 'check_status'] = False
+                        else:
+                            continue
+
+                    else:
+                        continue
+                    # next_task=ant.search_path()
+                    if next_task != -1:
+                        ant.path.append(next_task)
+                        ant.total_distance += visibility_graph[ant.current_task][next_task]
+                        ant.current_task = next_task
+                        self.move_count += 1
+                        # 与当前最优蚂蚁比较
+                        # if ant.total_distance < self.best_ant.total_distance:
+                        # 更新最优解
+                        # self.best_ant = copy.deepcopy(ant)
+                        print(u"the index of iteration：", self.iter, u"Vehicle task list：", ant.path, ant.current_task,
+                              u"Total completion time：", self.total_distance)
+                    else:
+                        ant.path.append(next_task)
+                        print(u"the index of iteration：", self.iter, u"Vehicle task list：", ant.path, ant.current_task,
+                              u"Total completion time：", self.total_distance)
+            vehicle_tasklist = {1:{},2:{},3:{},4:{},5:{},6:{}}
+
+            a=1
+            for ant in self.ants:
+                vehicle_tasklist[a]=ant.path
+                if self.total_distance <= ant.total_distance:
+                    self.total_distance = ant.total_distance
+                print('-----the task list of vehicle',a, 'is-----',ant.path,ant.total_distance)
+                a+=1
+
+
+            #record the completion time of each iteration
+            self.total_completion_time.append(self.total_distance)
+
+            if self.total_distance < self.best_distance:
+                self.best_distance = self.total_distance
+                self.best_iteration=self.iter
+            # update the pheromone matrix
+            self.__update_pheromone_gragh()
+            #print(u"迭代次数：", self.iter, self.total_completion_time)
+            self.iter += 1
+            if self.iter == 100:
+                print(self.total_completion_time)
+                print(u"the best iteration：", self.best_iteration, u"The optimal total completion time：",self.best_distance)
+                self.__iteration_visulazation()
+                return vehicle_tasklist
                 break
 
-            # Remove the item from the open set
-            del open_set[c_id]
+    # update the pheromone
+    def __update_pheromone_gragh(self):
+        # obtain the pheromone of each ant at the route
+        temp_pheromone = [[0.0 for col in Tasks] for raw in Tasks]
+        for ant in self.ants:
+            for i in range(1, len(ant.path)):
+                start, end = ant.path[i - 1], ant.path[i]
+                # 在路径上的每两个相邻城市间留下信息素，与路径总距离反比
+                temp_pheromone[start][end] += Q / self.total_distance
+                temp_pheromone[end][start] = temp_pheromone[start][end]
+        # update all the pheromone，old pheromone decrease with the addition new pheromone
+        for i in Tasks:
+            for j in Tasks:
+                pheromone_graph[i][j] = pheromone_graph[i][j] * RHO + temp_pheromone[i][j] * ALPHA
 
-            # Add it to the closed set
-            closed_set[c_id] = current
-
-            # expand search grid based on motion model
-            for move_x, move_y, move_cost in self.motion:
-                node = self.Node(current.x + move_x,
-                                 current.y + move_y,
-                                 current.cost + move_cost, c_id)
-                n_id = self.calc_index(node)
-
-                if n_id in closed_set:
-                    continue
-
-                if not self.verify_node(node):
-                    continue
-
-                if n_id not in open_set:
-                    open_set[n_id] = node  # Discover a new node
-                else:
-                    if open_set[n_id].cost >= node.cost:
-                        # This path is the best until now. record it!
-                        open_set[n_id] = node
-
-        rx, ry = self.calc_final_path(goal_node, closed_set)
-
-        return rx, ry
-
-    def calc_final_path(self, goal_node, closed_set):
-        # generate final course
-        rx, ry = [self.calc_position(goal_node.x, self.min_x)], [
-            self.calc_position(goal_node.y, self.min_y)]
-        parent_index = goal_node.parent_index
-        while parent_index != -1:
-            n = closed_set[parent_index]
-            rx.append(self.calc_position(n.x, self.min_x))
-            ry.append(self.calc_position(n.y, self.min_y))
-            parent_index = n.parent_index
-
-        return rx, ry
-
-    def calc_position(self, index, minp):
-        pos = index * self.resolution + minp
-        return pos
-
-    def calc_xy_index(self, position, minp):
-        return round((position - minp) / self.resolution)
-
-    def calc_index(self, node):
-        return (node.y - self.min_y) * self.x_width + (node.x - self.min_x)
-
-    def verify_node(self, node):
-        px = self.calc_position(node.x, self.min_x)
-        py = self.calc_position(node.y, self.min_y)
-
-        if px < self.min_x:
-            return False
-        if py < self.min_y:
-            return False
-        if px >= self.max_x:
-            return False
-        if py >= self.max_y:
-            return False
-
-        if self.obstacle_map[node.x][node.y]:
-            return False
-
-        return True
-
-    def calc_obstacle_map(self, ox, oy):
-
-        self.min_x = round(min(ox))
-        self.min_y = round(min(oy))
-        self.max_x = round(max(ox))
-        self.max_y = round(max(oy))
-        print("min_x:", self.min_x)
-        print("min_y:", self.min_y)
-        print("max_x:", self.max_x)
-        print("max_y:", self.max_y)
-
-        self.x_width = round((self.max_x - self.min_x) / self.resolution)
-        self.y_width = round((self.max_y - self.min_y) / self.resolution)
-        print("x_width:", self.x_width)
-        print("y_width:", self.y_width)
-
-        # obstacle map generation
-        self.obstacle_map = [[False for _ in range(self.y_width)]
-                             for _ in range(self.x_width)]
-        for ix in range(self.x_width):
-            x = self.calc_position(ix, self.min_x)
-            for iy in range(self.y_width):
-                y = self.calc_position(iy, self.min_y)
-                for iox, ioy in zip(ox, oy):
-                    d = math.hypot(iox - x, ioy - y)
-                    if d <= self.robot_radius:
-                        self.obstacle_map[ix][iy] = True
-                        break
-
-    @staticmethod
-    def get_motion_model():
-        # dx, dy, cost
-        motion = [[1, 0, 1],
-                  [0, 1, 1],
-                  [-1, 0, 1],
-                  [0, -1, 1],
-                  [-1, -1, math.sqrt(2)],
-                  [-1, 1, math.sqrt(2)],
-                  [1, -1, math.sqrt(2)],
-                  [1, 1, math.sqrt(2)]]
-
-        return motion
-
-
-def main():
-    print(__file__ + " start!!")
-
-    # start and goal position
-    sx = -5.0  # [m]
-    sy = -5.0  # [m]
-    gx = 50.0  # [m]
-    gy = 50.0  # [m]
-    grid_size = 2.0  # [m]
-    robot_radius = 1.0  # [m]
-
-    # set obstacle positions
-    ox, oy = [], []
-    for i in range(-10, 60):
-        ox.append(i)
-        oy.append(-10.0)
-    for i in range(-10, 60):
-        ox.append(60.0)
-        oy.append(i)
-    for i in range(-10, 61):
-        ox.append(i)
-        oy.append(60.0)
-    for i in range(-10, 61):
-        ox.append(-10.0)
-        oy.append(i)
-    for i in range(-10, 40):
-        ox.append(20.0)
-        oy.append(i)
-    for i in range(0, 40):
-        ox.append(40.0)
-        oy.append(60.0 - i)
-
-    if show_animation:  # pragma: no cover
-        plt.plot(ox, oy, ".k")
-        plt.plot(sx, sy, "og")
-        plt.plot(gx, gy, "xb")
-        plt.grid(True)
-        plt.axis("equal")
-
-    dijkstra = Dijkstra(ox, oy, grid_size, robot_radius)
-    rx, ry = dijkstra.planning(sx, sy, gx, gy)
-
-    if show_animation:  # pragma: no cover
-        plt.plot(rx, ry, "-r")
-        plt.pause(0.01)
+    def __iteration_visulazation(self):
+        # Apply the default theme
+        sns.set()
+        x=range(0,self.iter-1)
+        y=self.total_completion_time
+        plt.plot(x, y)
+        plt.legend('ABCDEF', ncol=2, loc='upper left');
         plt.show()
-
-
+        # Create a visualization
+        '''
+        sns.relplot(
+            data=dots, kind="line",
+            x="time", y="firing_rate", col="align",
+            hue="choice", size="coherence", style="choice",
+            facet_kws=dict(sharex=False),
+        )
+        '''
+        # ----------- main -----------
 if __name__ == '__main__':
-    main()
-
+    SCHEDULING()
