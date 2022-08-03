@@ -1,4 +1,4 @@
-'''Dijkstra and A* multi-AGV routing algorithm, without avoiding conflicts '''
+'''Dijkstra and A* multi-AGV routing algorithm, with avoiding conflicts '''
 
 import sys
 import pandas as pd
@@ -225,27 +225,13 @@ if __name__ == '__main__':
     #Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols="A:G", skiprows=0, nrows=6, dtype=object)
     Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=7,
                               dtype=object)
-    Task_list_visibility = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=141,
-                              dtype=object)
+    #Task_list_visibility = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=141,
+                              #dtype=object)
 
     Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
     Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
     #Tasks = Task_list_visibility['Task ID'].tolist()  # the task ID
 
-    #travel_time=[[0.0 for col in Tasks] for raw in Tasks]
-    #travel_time_back=[[0.0 for col in Tasks] for raw in Tasks]
-
-
-
-    #for i in Tasks:
-        #for j in Tasks:
-            #reconst_path,travel_time[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'Start node'],Task_list_visibility.loc[i,'End node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 +Task_list_visibility.loc[i,'unloading loading time'])
-            #reconst_path_back,travel_time_back[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'End node'],Task_list_visibility.loc[j,'Start node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 )
-
-    #travel_time_total=np.sum([travel_time,travel_time_back], axis = 0)
-    #df = pd.DataFrame(travel_time_total, columns=[Tasks])
-    # 保存到本地excel
-    #df.to_excel("Visibility_graph.xlsx", index=False)
 
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],
                                                  speed=1, TaskID=0, endtime_lasttask=0)
@@ -253,11 +239,8 @@ if __name__ == '__main__':
                      endtime_lasttask=arrive_time[1][0][Task_list.loc[0, 'End node']])
 
     for i in range(1,6):
-        #previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=Task_list.loc[i,'Start node'])
-        #generate_result(previous_nodes, shortest_path, start_node=Task_list.loc[i,'Start node'], target_node=Task_list.loc[i,'End node'])
         print('---------Task ID',i,'--------------')
         reconst_path,arrive_time[i+1][i]=a_star_algorithm(graph,Task_list.loc[i,'Start node'],Task_list.loc[i,'End node'],speed=1,TaskID=i,endtime_lasttask=arrive_time_back[i+1][i-1][Task_list.loc[i, 'Start node']])
         reconst_path_back, arrive_time_back[i+1][i]=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i+1, 'Start node'], speed=1, TaskID=i,endtime_lasttask=arrive_time[i+1][i][Task_list.loc[i, 'End node']])
-    #previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=57)
-    #generate_result(previous_nodes, shortest_path, start_node=57, target_node=122)
+
 

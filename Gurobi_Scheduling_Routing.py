@@ -84,7 +84,9 @@ for n in Tasks:
 TA={}
 for n in Tasks:
     TA[n]=model.addVar(vtype=GRB.CONTINUOUS)
-TT=[]
+
+TT={}
+TT=model.addVar(vtype=GRB.CONTINUOUS)
 
 model.update()
 
