@@ -355,7 +355,8 @@ class SCHEDULING(object):
         x=range(0,self.iter-1)
         y=self.total_completion_time
         plt.plot(x, y)
-        plt.legend('ABCDEF', ncol=2, loc='upper left');
+        plt.xlabel('The iteration')
+        plt.ylabel('The makespan of the operation')
         plt.show()
         # Create a visualization
         '''

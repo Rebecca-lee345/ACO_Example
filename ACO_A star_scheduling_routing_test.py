@@ -30,8 +30,11 @@ Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,
 Task_list_routing = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
-
 # input visibility graph
+visibility_graph=pd.read_excel('Visibility_graph.xlsx', sheet_name='Sheet1', usecols="B:EK", skiprows=0, nrows=141, dtype=object)
+visibility_graph=visibility_graph.values
+
+
 
 # Parameters definition
 #Line = list(range(0, 3))  # the number of lines in the roadmap
@@ -43,7 +46,7 @@ Tasks = Task_list['Task ID'].tolist()  # the task ID
 
 # pheromone matrix & Ant visibility matrix
 pheromone_graph = [[1.0 for col in Tasks] for raw in Tasks]
-visibility_graph = [[0.0 for col in Tasks] for raw in Tasks]
+#visibility_graph = [[0.0 for col in Tasks] for raw in Tasks]
 
 
 # -----Ants-----
@@ -154,10 +157,10 @@ class SCHEDULING(object):
         self.n = n
 
         # randomly assign a value to the distance between different tasks
-        for i in Tasks:
-            for j in Tasks:
-                temp_distance = random.randint(225, 450)
-                visibility_graph[i][j] = float(int(temp_distance + 0.5))
+        #for i in Tasks:
+            #for j in Tasks:
+                #temp_distance = random.randint(225, 450)
+                #visibility_graph[i][j] = float(int(temp_distance + 0.5))
 
         self.search_path()
 
@@ -355,14 +358,7 @@ class SCHEDULING(object):
             for j in Tasks:
                 pheromone_graph[i][j] = pheromone_graph[i][j] * RHO + temp_pheromone[i][j] * ALPHA
 
-    def __iteration_visulazation(self):
-        # Apply the default theme
-        sns.set()
-        x=range(0,self.iter-1)
-        y=self.total_completion_time
-        plt.plot(x, y)
-        plt.legend('ABCDEF', ncol=2, loc='upper left');
-        plt.show()
+
         # Create a visualization
         '''
         sns.relplot(
@@ -555,6 +551,16 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
     return None
 
 
+def iteration_visulazation(iter,total_completion_time):
+    # Apply the default theme
+    sns.set()
+    x = range(0, iter - 1)
+    y = total_completion_time
+    plt.plot(x, y)
+    plt.xlabel('The iteration')
+    plt.ylabel('The makespan of the operation')
+    plt.show()
+
 # ----------- main -----------
 if __name__ == '__main__':
     # input road map
@@ -576,16 +582,19 @@ if __name__ == '__main__':
     # main algorithm
     total_completion_time_result = []
     total_travel_time=[]
+    iter = 1
 
     while True:
-        iter=1
+        print('------------------------iteration', iter,'------------------')
         #scheduling the task
+        print('------------------------Task assignemnt result------------------')
         Task_assignment = SCHEDULING()
         #outputfile.close()  # close后才能看到写入的数据
         Task_assignment_result={}
         Task_assignment_result=Task_assignment.vehicle_tasklist
         Total_distance_result=Task_assignment.total_distance
         total_completion_time_result.append(Total_distance_result)
+
 
 
         print('---------------------------------route planning---------------------------------------')
@@ -605,7 +614,7 @@ if __name__ == '__main__':
         for i in range(1,17,3):
             reconst_path, arrive_time[(i+2)/3][i] = a_star_algorithm(graph, Task_list.loc[i, 'Start node'], Task_list.loc[i, 'End node'],
                                                          speed=Task_list_routing.loc[i, 'speed'], TaskID=i, endtime_lasttask=0+Task_list_routing.loc[i, 'loading time'])
-            reconst_path_back, arrive_time_back[(i+2)/3][i]=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i, 'Start node'], speed=Task_list_routing.loc[i, 'speed'], TaskID=i,
+            reconst_path_back, arrive_time_back[(i+2)/3][i]=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list_routing.loc[Task_assignment_result[(i+2)/3][1] , 'Start node'], speed=Task_list_routing.loc[i, 'speed'], TaskID=i,
                              endtime_lasttask=arrive_time[(i+2)/3][i][Task_list.loc[i, 'End node']]+Task_list_routing.loc[i, 'unloading time'])
         #the rest tasks
         for j in range(1,len(Task_assignment_result[1])-2):
@@ -629,6 +638,16 @@ if __name__ == '__main__':
                                                                   endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']])
         iter +=1
 
-        #total_travel_time.append = arrive_time_back
-        if iter == 3:
+        # find the maximum value in the arrive time of all vehicles
+        arrive_time_back_max = max(arrive_time_back[1][Task_assignment_result[1][len(Task_assignment_result[1])-3]].values())
+        for vehicle in range(2,7):
+            if max(arrive_time_back[vehicle][Task_assignment_result[vehicle][len(Task_assignment_result[1])-3]].values()) >= arrive_time_back_max:
+                arrive_time_back_max = max(arrive_time_back[vehicle][Task_assignment_result[vehicle][len(Task_assignment_result[1])-3]].values())
+
+        total_travel_time.append(arrive_time_back_max)
+        if iter == 100:
+            #result of scheduling without considering the idle time,routing
+            iteration_visulazation(iter, total_completion_time_result)
+            #result after routing
+            iteration_visulazation(iter,total_travel_time)
             break
