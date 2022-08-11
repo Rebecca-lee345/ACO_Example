@@ -32,18 +32,18 @@ for l in Line:
             if Task_list.loc[n,'Start point line'] == l and Task_list.loc[n,'Start point stop'] == s :
                 Pickpoint[l, s, n] = 1
 
-'''
+
 Predecessors=np.zeros((len(Tasks),1))
 for n in Tasks:
     while Task_list.loc[n,'Predecessors'] != 0:
         Predecessors[n,0] = Task_list.loc[n,'Task ID']-Task_list.loc[n,'Predecessors']
+
+
 '''
-
-
 Intermediate_Matrix=pd.DataFrame(columns=['line add','stop add'])
 Intermediate_Matrix['line add']=Task_list['End point line']-Task_list['Start point line']
 Intermediate_Matrix['stop add']=Task_list['End point stop']-Task_list['Start point stop']
-
+'''
 
 model = Model ('AGV_Test')
 
@@ -115,14 +115,13 @@ for l in Line:
             model.addConstr(quicksum(xf[l,s,f,n,t] for t in H for f in Forklifts) + quicksum(xa[l,s,a,n,t] for t in H for a in AGVs) >= Pickpoint[l,s,n] + Droppoint[l,s,n])
 
 #Ensure if point (l,s) is the pick point which precedes drop point (l’,s’) for task n, thus arrive time of AGV/Forklift to (l,s) is earlier than arrive time (l’,s’)
-for l in Line:
-    for s in Stop:
-        for n in Tasks:
-            model.addConstr(quicksum(t * xf[l,s,f,n,t] for t in H for f in Forklifts) <=quicksum(t * xf[l+Intermediate_Matrix[n,'line add'],s+Intermediate_Matrix[n,'stop add'],f,n,t] for t in H for f in Forklifts) + M*(1-Pickpoint[l,s,n]*Droppoint[l,s,n]))
-for l in Line:
-    for s in Stop:
-        for n in Tasks:
-            model.addConstr(quicksum(t * xa[l,s,a,n,t] for t in H for a in AGVs) <=quicksum(t * xa[l+Intermediate_Matrix[n,'line add'],s+Intermediate_Matrix[n,'stop add'],a,n,t] for t in H for a in AGVs) + M*(1-Pickpoint[l,s,n]*Droppoint[l,s,n]))
+
+for n in Tasks:
+    model.addConstr(quicksum(t * xf[Task_list.loc[n,'Start point line'],Task_list.loc[n,'Start point stop'],f,n,t] for t in H for f in Forklifts) <=quicksum(t * xf[Task_list.loc[n,'End point line'],Task_list.loc[n,'End point stop'],f,n,t] for t in H for f in Forklifts) + M*(1-Pickpoint[l,s,n]*Droppoint[l,s,n]))
+
+
+for n in Tasks:
+     model.addConstr(quicksum(t * xa[Task_list.loc[n,'Start point line'],Task_list.loc[n,'Start point stop'],a,n,t] for t in H for a in AGVs) <=quicksum(t * xa[Task_list.loc[n,'End point line'],Task_list.loc[n,'End point stop'],a,n,t] for t in H for a in AGVs) + M*(1-Pickpoint[l,s,n]*Droppoint[l,s,n]))
 
 #At the same time, it can only be one AGV or one Forklift on each point of the shared route except the starting point. (Guarantee conflict-free route)
 for l in Line:
