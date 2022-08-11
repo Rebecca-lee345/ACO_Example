@@ -587,7 +587,7 @@ if __name__ == '__main__':
     while True:
         print('------------------------iteration', iter,'------------------')
         #scheduling the task
-        print('------------------------Task assignemnt result------------------')
+        print('------------------------Task assignment result------------------')
         Task_assignment = SCHEDULING()
         #outputfile.close()  # close后才能看到写入的数据
         Task_assignment_result={}
@@ -645,7 +645,7 @@ if __name__ == '__main__':
                 arrive_time_back_max = max(arrive_time_back[vehicle][Task_assignment_result[vehicle][len(Task_assignment_result[1])-3]].values())
 
         total_travel_time.append(arrive_time_back_max)
-        if iter == 100:
+        if iter == 2:
             #result of scheduling without considering the idle time,routing
             iteration_visulazation(iter, total_completion_time_result)
             #result after routing
