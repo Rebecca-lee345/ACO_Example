@@ -1,4 +1,4 @@
-# ACO routing without collision avoidance
+# ACO routing with collision avoidance
 
 
 
@@ -11,6 +11,12 @@ import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+#test
+
+
+
+
+
 
 #Task list input
 Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142,
@@ -18,12 +24,18 @@ Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', i
 
 # parameters
 (ALPHA, BETA, RHO, Q) = (1.0,2.0,0.5,100.0)
+#safety distance between two vehicles on the link set as 2 seconds
+sigma = 2
+# safe time differnece between two vehicles at the same point (seconds)
+Ht = 0.2
 
 (node_num, ant_num) = (25,40)
 
 #visibility graph---the distance between nodes  and pheromone graph
 visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
 pheromone_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
+#store the collision factor
+collision_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
 
 #Roadmap
 Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
@@ -100,21 +112,6 @@ class Ant(object):
         self.move_count = 1
 
 
-    def __cal_total_distance(self):
-        temp_distance = 0.0
-        for i in range(1, node_num):
-            start, end = self.path[i], self.path[i-1]
-            temp_distance += visibility_graph[start][end]
-        # 回路
-        end = self.path[0]
-        temp_distance += visibility_graph[start][end]
-        self.total_distance = temp_distance
-
-
-
-
-
-
 #----------- ant colony routing -----------
 
 graph_input = Graph(nodes, init_graph)
@@ -125,13 +122,13 @@ graph_input = Graph(nodes, init_graph)
 #
 # dic[9]=6
 
-#scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
-scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
-,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
-,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
-,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
-,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
-,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
+scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
+# scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
+# ,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
+# ,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
+# ,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+# ,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
+# ,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
 
 class ACO_Routing(object):
     def __init__(self, n = node_num,graph=graph_input, scheudling_list=scheduling_result):
@@ -151,6 +148,10 @@ class ACO_Routing(object):
     # 初始化
     def new(self):
         #self.__running = False
+        #this list is used in to link collision check
+        self.list_current=[0,0]
+        self.list_other =[0,0]
+        current_nodetime = 0
         # 初始城市之间的距离和信息素
         for i in range(node_num):
             for j in range(node_num):
@@ -171,6 +172,36 @@ class ACO_Routing(object):
             for task_id in range(-1, 150):
                 vehicle_best_path[vehicle][task_id] = {}
 
+    # Function to check if there are collision on each link
+    def check_link_collision(self,check_list):
+        """校验是否重叠"""
+
+
+        if len(check_list) < 1:
+            return False
+        if len(check_list) == 1:
+            return True
+        #print('check_list : ', check_list)
+        check_list[0] = list(map(int, check_list[0]))
+        check_list[1] = list(map(int, check_list[1]))
+
+        for i in range(0, len(check_list)):
+            if check_list[i][0]> check_list[i][1]:
+                check_list[i][0], check_list[i][-1] = check_list[i][-1], check_list[i][0]
+        # 排序
+        a_list = sorted(check_list, key=lambda l: l[0])
+        #print('a_list : ', a_list)
+        for i in range(0, len(a_list) - 1):
+            if a_list[i + 1][0] <= a_list[i][1]:
+                #print('%s 与 %s 重叠!' % (str(a_list[i]), str(a_list[i + 1])))
+                return False
+
+    #a = [50, 150]
+    #b = [1, 100]
+
+    #check_list = [a, b]
+    #res = check_link_collision(check_list)
+
 
 
 
@@ -179,6 +210,8 @@ class ACO_Routing(object):
         self.__running = True
         self.iter = 1
         self.iter_total_completion_time=[]
+        self.NY = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
+        self.NZ = [ 0.0 for col in range(node_num)]
 
 
         while self.__running:
@@ -193,13 +226,23 @@ class ACO_Routing(object):
 
             #creat the list to store the path travelling time
             total_completion_time = [0.0 for raw in range(6)]
-            #create the list to store the task finish time at each vehicle
-            task_completion_time={}
+            #create the dictionary to store the task finish time at each vehicle,at each point
+            task_completion_time_forward={}
+            task_completion_time_back = {}
             for vehicle in range(6):
-                task_completion_time[vehicle]={}
+                task_completion_time_forward[vehicle]={}
+                task_completion_time_back[vehicle] = {}
             for vehicle in range(6):
                 for task_id in range(-1,150):
-                    task_completion_time[vehicle][task_id] = {}
+                    task_completion_time_forward[vehicle][task_id] = {}
+                    task_completion_time_back[vehicle][task_id] = {}
+            for vehicle in range(6):
+                for task_id in range(-1,150):
+                    for point in range(0,25):
+                        task_completion_time_forward[vehicle][task_id][point] = 0
+                        task_completion_time_back[vehicle][task_id][point] = 0
+
+
 
 
 
@@ -252,6 +295,8 @@ class ACO_Routing(object):
                                             ant.total_distance += init_graph[ant.current_node][next_node]
                                             ant.current_node=next_node
                                             ant.path.append(next_node)
+
+
                                             break
                                         else:
                                             continue
@@ -265,7 +310,50 @@ class ACO_Routing(object):
                         #print(u"the index of iteration：", self.iter, self.best_ant.path, ant.current_node)
                         # store the best path for each vehicle each task for the forward path searching
                         vehicle_best_path[vehicle][scheudling_list[vehicle][task_location]] =self.best_ant.path
+                        #vehicle的第一个点的开始时间等于vehicle完成上一个任务的完成时间
+                        task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[0]]=total_completion_time[vehicle]
+                        # each vehicle's total completion time
                         total_completion_time[vehicle] += self.best_ant.total_distance/Task_list.loc[scheudling_list[vehicle][task_location],'speed']+Task_list.loc[scheudling_list[vehicle][task_location],'loading time']
+
+                        #vehicle 在每一个点的到达时间
+                        for point in range(1,len(self.best_ant.path)):
+                            task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] = init_graph[self.best_ant.path[point-1]][self.best_ant.path[point]] / Task_list.loc[scheudling_list[vehicle][task_location],'speed']+ task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point-1]]
+
+                        #check if there is a collision on the link
+                        for point in range(0, len(self.best_ant.path)-1):
+                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - sigma,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + sigma]
+
+                            for i in range(0,6):
+                                for t in range(0,150):
+                                    if task_completion_time_forward[i][t][self.best_ant.path[point]] != 0 and task_completion_time_forward[i][t][self.best_ant.path[point+1]] != 0:
+                                        self.list_other[0:2] = [task_completion_time_forward[i][t][self.best_ant.path[point]] ,task_completion_time_forward[i][t][self.best_ant.path[point+1]]]
+
+                                        check_list = [self.list_current] + [self.list_other]
+                                        result_collision = self.check_link_collision(check_list)
+                                        if result_collision == False:
+                                            self.NY[self.best_ant.path[point]][self.best_ant.path[point+1]] +=1
+                                            self.NY[self.best_ant.path[point+1]][self.best_ant.path[point]] += 1
+
+
+
+                        # check if there is a collision on the Node
+                        for point in range(0, len(self.best_ant.path)):
+                            current_nodetime = task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]]
+                            for i in range(0,6):
+                                for t in range(0,150):
+                                    if task_completion_time_forward[i][t][self.best_ant.path[point]] != 0:
+                                        time_difference = abs(current_nodetime-task_completion_time_forward[i][t][self.best_ant.path[point]])
+                                        if time_difference < Ht:
+                                            self.NZ[self.best_ant.path[point]] +=1
+
+
+
+
+
+
+
+
+
 
                         #-------------------------------------------------------------------------
                         #backward path searching for each vehicle each task
@@ -329,18 +417,54 @@ class ACO_Routing(object):
                         # store the best path for each vehicle each task for the forward path searching
                         vehicle_best_path[vehicle][scheudling_list[vehicle][task_location]].extend(self.best_ant.path)
 
+                        #vehicle的第一个点的开始时间等于vehicle完成上一个任务的完成时间
+                        task_completion_time_back[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[0]]=total_completion_time[vehicle]
+
                         total_completion_time[vehicle] += self.best_ant.total_distance/Task_list.loc[scheudling_list[vehicle][task_location],'speed']+Task_list.loc[scheudling_list[vehicle][task_location],'unloading time']
-                        task_completion_time[vehicle][scheudling_list[vehicle][task_location]] = total_completion_time[vehicle]
+
+                        for point in range(1,len(self.best_ant.path)):
+                            task_completion_time_back[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] = init_graph[self.best_ant.path[point-1]][self.best_ant.path[point]] / Task_list.loc[scheudling_list[vehicle][task_location],'speed']+ task_completion_time_back[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point-1]]
+
+                        #check link collision
+                        for point in range(0, len(self.best_ant.path)-1):
+                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - sigma,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + sigma]
+
+                            for i in range(0,6):
+                                for t in range(0,150):
+                                    if task_completion_time_forward[i][t][self.best_ant.path[point]] != 0 and task_completion_time_forward[i][t][self.best_ant.path[point+1]] != 0:
+                                        self.list_other[0:2] = [task_completion_time_forward[i][t][self.best_ant.path[point]] ,task_completion_time_forward[i][t][self.best_ant.path[point+1]]]
+                                        check_list = [self.list_current] + [self.list_other]
+                                        result_collision = self.check_link_collision(check_list)
+                                        if result_collision == False:
+                                            self.NY[self.best_ant.path[point]][self.best_ant.path[point + 1]] += 1
+                                            self.NY[self.best_ant.path[point + 1]][self.best_ant.path[point]] += 1
+
+                        # check Node collision
+                        for point in range(0, len(self.best_ant.path)):
+                            current_nodetime = task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]]
+                            for i in range(0,6):
+                                for t in range(0,150):
+                                    if task_completion_time_forward[i][t][self.best_ant.path[point]] != 0:
+                                        time_difference = abs(current_nodetime-task_completion_time_forward[i][t][self.best_ant.path[point]])
+                                        if time_difference < Ht:
+                                            self.NZ[self.best_ant.path[point]] +=1
+
+
+
                     else:
                         idle_time = random.randint(180, 360)
                         total_completion_time[vehicle]+=idle_time
+
             self.iter_total_completion_time.append(max(total_completion_time))
             self.iter += 1
-            if self.iter == 100:
+            if self.iter == 2:
                 print(vehicle_best_path)
                 print(total_completion_time)
                 print(self.iter_total_completion_time)
-                return self.iter_total_completion_time
+                print(task_completion_time_forward)
+                print('------------------------------------------way back---------------------------------------------------------')
+                print(task_completion_time_back)
+                return self.iter_total_completion_time,self.NY,self.NZ
 
                 self.__running= False
             else:
@@ -375,4 +499,8 @@ if __name__ == '__main__':
 
     Routing=ACO_Routing()
     total_completion_time_result=Routing.iter_total_completion_time
-    iteration_visulazation(100, total_completion_time_result)
+    iteration_visulazation(2, total_completion_time_result)
+
+    NumberofLinkconflicts=Routing.NY
+    NumberofNodeconflicts = Routing.NZ
+
