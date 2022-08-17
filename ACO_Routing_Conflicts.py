@@ -22,12 +22,21 @@ import matplotlib.pyplot as plt
 Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142,
                               dtype=object)
 
-# parameters
-(ALPHA, BETA, RHO, Q) = (1.0,2.0,0.5,100.0)
+# ---------------------------------------parameters-------------------------------------
+(ALPHA, BETA, LAMDA, RHO, Q) = (1.0,2.0,3.0,0.5,100.0)
 #safety distance between two vehicles on the link set as 2 seconds
-sigma = 2
+xi = 2
 # safe time differnece between two vehicles at the same point (seconds)
 Ht = 0.2
+#the maximum number of conflicts density on link
+Ha= 2
+#the maximun number of conflicts at node
+Hb = 2
+
+#penalty coefficient gamma 20s
+gamma = 20
+#maximum iteration number
+Max_iteration =2
 
 (node_num, ant_num) = (25,40)
 
@@ -37,7 +46,13 @@ pheromone_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
 #store the collision factor
 collision_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
 
-#Roadmap
+#Particle matrix
+
+
+
+
+
+#-------------------------------------------Roadmap----------------------------
 Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
 nodes = list(range(0, 25))
 
@@ -53,7 +68,7 @@ for i in range(0, 27):
 
 
 
-#-----------graph: roadmap-------------------
+#------------------------------------------graph: roadmap-------------------
 class Graph(object):
     def __init__(self, nodes, init_graph):
         self.nodes = nodes
@@ -92,7 +107,7 @@ class Graph(object):
         "Returns the value of an edge between two nodes."
         return self.graph[node1][node2]
 
-#----------- Ant -----------
+#------------------------------------------- Ant ----------------------------
 class Ant(object):
     # 初始化
     def __init__(self,ID):
@@ -110,9 +125,30 @@ class Ant(object):
         self.path.append(node_index)
         self.open_table_city[node_index] = False
         self.move_count = 1
+        self.antNY = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
+        self.antNZ = [ 0.0 for col in range(node_num)]
+        self.list_current=[0,0]
+        self.list_other =[0,0]
+        self.current_nodetime = 0
+        self.real_total_distance = 0
+
+        self.task_completion_time_forward={}
+        self.task_completion_time_back = {}
+        for vehicle in range(6):
+            self.task_completion_time_forward[vehicle]={}
+            self.task_completion_time_back[vehicle] = {}
+        for vehicle in range(6):
+            for task_id in range(-1,150):
+                self.task_completion_time_forward[vehicle][task_id] = {}
+                self.task_completion_time_back[vehicle][task_id] = {}
+        for vehicle in range(6):
+            for task_id in range(-1,150):
+                for point in range(0,25):
+                    self.task_completion_time_forward[vehicle][task_id][point] = 0
+                    self.task_completion_time_back[vehicle][task_id][point] = 0
 
 
-#----------- ant colony routing -----------
+#--------------------------------------- ant colony routing -----------
 
 graph_input = Graph(nodes, init_graph)
 # neighbors = graph_input.get_outgoing_edges(8)
@@ -122,13 +158,13 @@ graph_input = Graph(nodes, init_graph)
 #
 # dic[9]=6
 
-scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
-# scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
-# ,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
-# ,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
-# ,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
-# ,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
-# ,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
+#scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
+scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
+,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
+,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
+,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
+,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
 
 class ACO_Routing(object):
     def __init__(self, n = node_num,graph=graph_input, scheudling_list=scheduling_result):
@@ -162,6 +198,7 @@ class ACO_Routing(object):
         for ant in self.ants:
             ant.path = []
             ant.total_distance = 0
+            ant.real_total_distance = 0
 
     def __clean_data(self):
         # create a dic to store the best path for each vehicle each task
@@ -201,6 +238,23 @@ class ACO_Routing(object):
 
     #check_list = [a, b]
     #res = check_link_collision(check_list)
+
+
+    #Fitness function of single ant
+    def ant_fitness(self,antNY,antNZ,ant_total_distance):
+        temp_pho= [[0.0 for col in nodes] for raw in nodes]
+        sum_link=0
+        sum_node=0
+        for i in nodes:
+            for j in nodes:
+                temp_pho[i][j] = (antNY[i][j]+1)
+                sum_link += max(0, temp_pho[i][j]-Ha)
+        for i in nodes:
+            sum_node += max(0, antNZ[i]+1-Hb)
+        fitness_result= ant_total_distance + gamma * (sum_link + sum_node)
+
+        return fitness_result
+
 
 
 
@@ -274,7 +328,7 @@ class ACO_Routing(object):
                                 for i in neighbors:
                                     try:
                                         # Calculate the probability
-                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i],ALPHA) * pow((1.0 / visibility_graph[ant.current_node][i]), BETA)
+                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i],ALPHA) * pow((1.0 / visibility_graph[ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
                                         total_prob += select_nodes_prob[i]
 
                                     except ZeroDivisionError as e:
@@ -300,12 +354,55 @@ class ACO_Routing(object):
                                             break
                                         else:
                                             continue
+
+                            ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[0]]=0
+                            # each vehicle's total completion time
+                            total_completion_time[vehicle] += ant.total_distance/Task_list.loc[scheudling_list[vehicle][task_location],'speed']+Task_list.loc[scheudling_list[vehicle][task_location],'loading time']
+
+                            #vehicle 在每一个点的到达时间
+                            for point in range(1,len(ant.path)):
+                                ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[point]] = init_graph[ant.path[point-1]][ant.path[point]] / Task_list.loc[scheudling_list[vehicle][task_location],'speed']+ ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[point-1]]
+
+
+
+
+                            #check each ant if there is a collision on the link
+                            for point in range(0, len(ant.path)-1):
+                                ant.list_current[0:2]=[ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[point]] - xi,ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[point+1]] + xi]
+                                for i in range(0,6):
+                                    for t in range(0,150):
+                                        if ant.task_completion_time_forward[i][t][ant.path[point]] != 0 and ant.task_completion_time_forward[i][t][ant.path[point+1]] != 0:
+                                            ant.list_other[0:2] = [ant.task_completion_time_forward[i][t][ant.path[point]] ,ant.task_completion_time_forward[i][t][ant.path[point+1]]]
+
+                                            check_list = [ant.list_current] + [ant.list_other]
+                                            result_collision = self.check_link_collision(check_list)
+                                            if result_collision == False:
+                                                ant.antNY[ant.path[point]][ant.path[point+1]] +=1
+                                                ant.antNY[ant.path[point+1]][ant.path[point]] += 1
+
+                            # check each ant if there is a collision on the Node
+                            for point in range(0, len(ant.path)):
+                                ant.current_nodetime = ant.task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][ant.path[point]]
+                                for i in range(0,6):
+                                    for t in range(0,150):
+                                        if ant.task_completion_time_forward[i][t][ant.path[point]] != 0:
+                                            ant_time_difference = abs(current_nodetime-ant.task_completion_time_forward[i][t][ant.path[point]])
+                                            if ant_time_difference < Ht:
+                                                ant.antNZ[ant.path[point]] +=1
+
+
+                            #calculate the fitness function
+                            print('error')
+                            ant.real_total_distance=self.ant_fitness(ant.antNY, ant.antNZ, ant.total_distance)
+
+
                             # 与当前最优蚂蚁比较
-                            if ant.total_distance < self.best_ant.total_distance:
+                            if ant.real_total_distance < self.best_ant.total_distance:
                                 # 更新最优解
                                 self.best_ant = copy.deepcopy(ant)
-                        # 更新信息素
-                        self.__update_pheromone_gragh()
+
+                        # update the pheromone matrix
+                        self.__update_pheromone_graph()
                         #print (u"vehicle number：",vehicle,u"最佳路径总距离：",int(self.best_ant.total_distance))
                         #print(u"the index of iteration：", self.iter, self.best_ant.path, ant.current_node)
                         # store the best path for each vehicle each task for the forward path searching
@@ -321,8 +418,7 @@ class ACO_Routing(object):
 
                         #check if there is a collision on the link
                         for point in range(0, len(self.best_ant.path)-1):
-                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - sigma,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + sigma]
-
+                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - xi,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + xi]
                             for i in range(0,6):
                                 for t in range(0,150):
                                     if task_completion_time_forward[i][t][self.best_ant.path[point]] != 0 and task_completion_time_forward[i][t][self.best_ant.path[point+1]] != 0:
@@ -345,6 +441,10 @@ class ACO_Routing(object):
                                         time_difference = abs(current_nodetime-task_completion_time_forward[i][t][self.best_ant.path[point]])
                                         if time_difference < Ht:
                                             self.NZ[self.best_ant.path[point]] +=1
+
+                        #update the collision avoidance factor
+
+                        self.__update_collision_graph()
 
 
 
@@ -380,8 +480,7 @@ class ACO_Routing(object):
                                 for i in neighbors:
                                     try:
                                         # Calculate the probability
-                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i], ALPHA) * pow(
-                                            (1.0 / visibility_graph[ant.current_node][i]), BETA)
+                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i], ALPHA) * pow((1.0 / visibility_graph[ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
                                         total_prob += select_nodes_prob[i]
 
                                     except ZeroDivisionError as e:
@@ -411,7 +510,7 @@ class ACO_Routing(object):
                                 # update the best solution
                                 self.best_ant = copy.deepcopy(ant)
                         # update pheromone
-                        self.__update_pheromone_gragh()
+                        self.__update_pheromone_graph()
                         #print(u"vehicle number：", vehicle, u"最佳路径总距离：", int(self.best_ant.total_distance))
                         #print(u"the index of iteration：", self.iter, self.best_ant.path, ant.current_node)
                         # store the best path for each vehicle each task for the forward path searching
@@ -427,7 +526,7 @@ class ACO_Routing(object):
 
                         #check link collision
                         for point in range(0, len(self.best_ant.path)-1):
-                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - sigma,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + sigma]
+                            self.list_current[0:2]=[task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point]] - xi,task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[point+1]] + xi]
 
                             for i in range(0,6):
                                 for t in range(0,150):
@@ -449,6 +548,9 @@ class ACO_Routing(object):
                                         if time_difference < Ht:
                                             self.NZ[self.best_ant.path[point]] +=1
 
+                        # update the collision avoidance factor
+                        self.__update_collision_graph()
+
 
 
                     else:
@@ -457,7 +559,7 @@ class ACO_Routing(object):
 
             self.iter_total_completion_time.append(max(total_completion_time))
             self.iter += 1
-            if self.iter == 2:
+            if self.iter == Max_iteration:
                 print(vehicle_best_path)
                 print(total_completion_time)
                 print(self.iter_total_completion_time)
@@ -469,8 +571,10 @@ class ACO_Routing(object):
                 self.__running= False
             else:
                 continue
-    # 更新信息素
-    def __update_pheromone_gragh(self):
+
+
+    # update pheromone
+    def __update_pheromone_graph(self):
         # obtain the pheromone of each ant at the route
         temp_pheromone = [[0.0 for col in nodes] for raw in nodes]
         for ant in self.ants:
@@ -483,6 +587,17 @@ class ACO_Routing(object):
         for i in nodes:
             for j in nodes:
                 pheromone_graph[i][j] = pheromone_graph[i][j] * RHO + temp_pheromone[i][j] * ALPHA
+
+    #update the collision avodiance factor
+    def __update_collision_graph(self):
+    #update the collision via the #of link conflicts and #of node conflicts
+        for i in nodes:
+            for j in nodes:
+                collision_graph[i][j] = 1.0 / ((self.NY[i][j]+1) * (self.NZ[i]+1))
+
+
+
+
 
 def iteration_visulazation(iter,total_completion_time):
     # Apply the default theme
@@ -499,7 +614,7 @@ if __name__ == '__main__':
 
     Routing=ACO_Routing()
     total_completion_time_result=Routing.iter_total_completion_time
-    iteration_visulazation(2, total_completion_time_result)
+    iteration_visulazation(Max_iteration, total_completion_time_result)
 
     NumberofLinkconflicts=Routing.NY
     NumberofNodeconflicts = Routing.NZ
