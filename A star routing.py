@@ -225,7 +225,7 @@ if __name__ == '__main__':
     #Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols="A:G", skiprows=0, nrows=6, dtype=object)
     Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=7,
                               dtype=object)
-    Task_list_visibility = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=141,
+    Task_list_visibility = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10], skiprows=0, nrows=141,
                               dtype=object)
 
     Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
@@ -237,16 +237,16 @@ if __name__ == '__main__':
 
 
 
-    #for i in Tasks:
-        #for j in Tasks:
-            #reconst_path,travel_time[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'Start node'],Task_list_visibility.loc[i,'End node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 +Task_list_visibility.loc[i,'unloading loading time'])
-            #reconst_path_back,travel_time_back[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'End node'],Task_list_visibility.loc[j,'Start node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 )
+    for i in Tasks:
+        for j in Tasks:
+            reconst_path,travel_time[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'Start node'],Task_list_visibility.loc[i,'End node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 +Task_list_visibility.loc[i,'unloading loading time'])
+            reconst_path_back,travel_time_back[i][j]=a_star_algorithm(graph,Task_list_visibility.loc[i,'End node'],Task_list_visibility.loc[j,'Start node'],speed=Task_list_visibility.loc[i,'speed'],TaskID=i,endtime_lasttask= 0 )
 
-    #travel_time_total=np.sum([travel_time,travel_time_back], axis = 0)
-    #df = pd.DataFrame(travel_time_total, columns=[Tasks])
-    # 保存到本地excel
-    #df.to_excel("Visibility_graph.xlsx", index=False)
-
+    travel_time_total=np.sum([travel_time,travel_time_back], axis = 0)
+    df = pd.DataFrame(travel_time_total, columns=[Tasks])
+    #保存到本地excel
+    df.to_excel("Visibility_graph_ACO.xlsx", index=False)
+'''
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],
                                                  speed=1, TaskID=0, endtime_lasttask=0)
     reconst_path_back, arrive_time_back[1][0] =a_star_algorithm(graph, Task_list.loc[0, 'End node'], Task_list.loc[1, 'Start node'], speed=1, TaskID=0,
@@ -260,4 +260,4 @@ if __name__ == '__main__':
         reconst_path_back, arrive_time_back[i+1][i]=a_star_algorithm(graph, Task_list.loc[i, 'End node'], Task_list.loc[i+1, 'Start node'], speed=1, TaskID=i,endtime_lasttask=arrive_time[i+1][i][Task_list.loc[i, 'End node']])
     #previous_nodes, shortest_path = dijkstra_algorithm(graph=graph, start_node=57)
     #generate_result(previous_nodes, shortest_path, start_node=57, target_node=122)
-
+'''
