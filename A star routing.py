@@ -269,39 +269,39 @@ if __name__ == '__main__':
     graph = Graph(nodes, init_graph)
 
 
-    travel_distance = {}
-    travel_distance_end={}
-    travel_distance_sum={}
-
-    for task in Tasks:
-        travel_distance[task] = {}
-        travel_distance_end[task] = {}
-        travel_distance_sum[task] = {}
-
-    for task in Tasks:
-        for i in nodes:
-            travel_distance[task][i] = {}
-            travel_distance_end[task][i] = {}
-            travel_distance_sum[task][i] = {}
-
-    for task in Tasks:
-        for i in nodes:
-            for j in nodes:
-                travel_distance[task][i][j] = 1
-                travel_distance_end[task][i][j] = 0
-                travel_distance_sum[task][i][j] = 1
-
-
-    for task in Tasks:
-        for i in nodes:
-            for j in nodes:
-                travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
-                travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
-                travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
-
-
-    with open("VisibilityGraphACO.pkl", "wb") as tf:
-        pickle.dump(travel_distance_sum, tf)
+    # travel_distance = {}
+    # travel_distance_end={}
+    # travel_distance_sum={}
+    #
+    # for task in Tasks:
+    #     travel_distance[task] = {}
+    #     travel_distance_end[task] = {}
+    #     travel_distance_sum[task] = {}
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         travel_distance[task][i] = {}
+    #         travel_distance_end[task][i] = {}
+    #         travel_distance_sum[task][i] = {}
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         for j in nodes:
+    #             travel_distance[task][i][j] = 1
+    #             travel_distance_end[task][i][j] = 0
+    #             travel_distance_sum[task][i][j] = 1
+    #
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         for j in nodes:
+    #             travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
+    #             travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+    #             travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
+    #
+    #
+    # with open("VisibilityGraphACO.pkl", "wb") as tf:
+    #     pickle.dump(travel_distance_sum, tf)
 
 '''
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],

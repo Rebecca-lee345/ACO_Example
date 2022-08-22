@@ -12,8 +12,14 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 #test
 
+# Open pickle file and load it in a dictionary
+pickle_file = open("VisibilityGraphACO.pkl", "rb")
+visibility_graph_ACO = pickle.load(pickle_file)
+
+print(visibility_graph_ACO)
 
 
 
@@ -35,7 +41,7 @@ Hb = 2
 #penalty coefficient gamma 20s
 gamma = 20
 #maximum iteration number
-Max_iteration =50
+Max_iteration =2
 
 (node_num, ant_num) = (25,40)
 
