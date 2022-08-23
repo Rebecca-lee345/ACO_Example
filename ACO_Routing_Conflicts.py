@@ -19,10 +19,6 @@ import pickle
 pickle_file = open("VisibilityGraphACO.pkl", "rb")
 visibility_graph_ACO = pickle.load(pickle_file)
 
-print(visibility_graph_ACO)
-
-
-
 #Task list input
 Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142,
                               dtype=object)
@@ -41,12 +37,12 @@ Hb = 2
 #penalty coefficient gamma 20s
 gamma = 20
 #maximum iteration number
-Max_iteration =2
+Max_iteration =50
 
 (node_num, ant_num) = (25,40)
 
 #visibility graph---the distance between nodes  and pheromone graph
-visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
+#visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
 pheromone_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
 #store the collision factor
 collision_graph = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
@@ -149,13 +145,13 @@ graph_input = Graph(nodes, init_graph)
 #
 # dic[9]=6
 
-scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
-# scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
-# ,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
-# ,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
-# ,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
-# ,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
-# ,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
+#scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
+scheduling_result=[[1, 0, 43, 44, 116, 63, 20, 51, 23, 22, 119, 83, 50, 86, -1, 18, -1, -1, 40, 64, 21, 39, 85, -1, -1, 82, -1, 95, -1, 52, -1, 93, -1, 55]
+,[4, -1, -1, 46, 6, 9, 84, 49, 5, 8, 80, -1, 120, 90, 121, 38, 91, 25, 115, 125, 118, -1, -1, -1, -1, 96, -1, -1, -1, -1, -1, -1, -1]
+,[7, -1, -1, -1, -1, 79, 2, 24, -1, -1, -1, 62, -1, -1, 87, 3, 45, 81, 89, 48, -1, -1, 94, -1, 92, 47, -1, -1, -1, -1, -1, -1, -1]
+,[10, 114, 117, 123, -1, 19, 124, 54, 11, 41, 88, 53, 126, 127, -1, -1, -1, 122, 42, -1, -1, 128, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+,[13, 27, 36, 110, 134, 15, 56, 74, 137, 12, 135, 28, 103, 97, 102, 61, 107, 59, 31, 130, 73, 57, 105, 129, 65, 76, 108, 101, 71, 68, 58, 133, 17]
+,[16, 99, 136, 66, 98, 72, 111, 77, 139, 67, 131, 112, 78, 69, 100, 70, 138, 33, 132, 75, 26, 32, 104, 34, 106, 37, 60, 30, 14, 113, 35, 109, 29]]
 
 class ACO_Routing(object):
     def __init__(self, n = node_num,graph=graph_input, scheudling_list=scheduling_result):
@@ -164,10 +160,10 @@ class ACO_Routing(object):
         self.n = n
         #self.new()
         # calculate the distance between nodes
-        for i in range(node_num):
-            for j in range(node_num):
-                temp_distance = random.randint(225, 450)
-                visibility_graph[i][j] = float(int(temp_distance + 0.5))
+        # for i in range(node_num):
+        #     for j in range(node_num):
+        #         temp_distance = random.randint(225, 450)
+        #         visibility_graph[i][j] = float(int(temp_distance + 0.5))
         #search the path
         self.search_path(graph,scheudling_list)
 
@@ -327,7 +323,7 @@ class ACO_Routing(object):
                                 for i in neighbors:
                                     try:
                                         # Calculate the probability
-                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i],ALPHA) * pow((1.0 / visibility_graph[ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
+                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i],ALPHA) * pow((1.0 / visibility_graph_ACO[scheudling_list[vehicle][task_location]][ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
                                         total_prob += select_nodes_prob[i]
 
                                     except ZeroDivisionError as e:
@@ -443,7 +439,7 @@ class ACO_Routing(object):
                                 for i in neighbors:
                                     try:
                                         # Calculate the probability
-                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i], ALPHA) * pow((1.0 / visibility_graph[ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
+                                        select_nodes_prob[i] = pow(pheromone_graph[ant.current_node][i], ALPHA) * pow((1.0 / visibility_graph_ACO[scheudling_list[vehicle][task_location]][ant.current_node][i]), BETA) * pow(collision_graph[ant.current_node][i],LAMDA)
                                         total_prob += select_nodes_prob[i]
 
                                     except ZeroDivisionError as e:

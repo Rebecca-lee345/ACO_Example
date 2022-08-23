@@ -69,38 +69,38 @@ class Ant(object):
         self.open_table_task[task_index] = False
         self.move_count = 1
 
-    # choose next task
-    def __choice_next_task(self):
-        next_task = -1
-        select_tasks_prob = [0.0 for i in Tasks]  # store the probability of choosing next task
-        total_prob = 0.0
-        # get the probability of choosing next task
-
-        for i in Tasks:
-            if self.open_table_task[i]:
-                try:
-                    # Calculate the probability
-                    # 计算概率：与信息素浓度成正比，与距离成反比
-                    select_tasks_prob[i] = pow(pheromone_graph[self.current_task][i], ALPHA) * pow(
-                        (1.0 / visibility_graph[self.current_task][i]), BETA)
-                    total_prob += select_tasks_prob[i]
-                except ZeroDivisionError as e:
-                    print('Ant ID: {ID}, current task: {current}, target task: {target}'.format(ID=self.ID,
-                                                                                                current=self.current_task,
-                                                                                                target=i))
-                    sys.exit(1)
-
-        # 轮盘选择城市
-        if total_prob > 0.0:
-            # 产生一个随机概率,0.0-total_prob
-            temp_prob = random.uniform(0.0, total_prob)
-            for i in Tasks:
-                if self.open_table_task[i]:
-                    # 轮次相减
-                    temp_prob -= select_tasks_prob[i]
-                    if temp_prob < 0.0:
-                        next_task = i
-                        break
+    # # choose next task
+    # def __choice_next_task(self):
+    #     next_task = -1
+    #     select_tasks_prob = [0.0 for i in Tasks]  # store the probability of choosing next task
+    #     total_prob = 0.0
+    #     # get the probability of choosing next task
+    #
+    #     for i in Tasks:
+    #         if self.open_table_task[i]:
+    #             try:
+    #                 # Calculate the probability
+    #                 # 计算概率：与信息素浓度成正比，与距离成反比
+    #                 select_tasks_prob[i] = pow(pheromone_graph[self.current_task][i], ALPHA) * pow(
+    #                     (1.0 / visibility_graph[self.current_task][i]), BETA)
+    #                 total_prob += select_tasks_prob[i]
+    #             except ZeroDivisionError as e:
+    #                 print('Ant ID: {ID}, current task: {current}, target task: {target}'.format(ID=self.ID,
+    #                                                                                             current=self.current_task,
+    #                                                                                             target=i))
+    #                 sys.exit(1)
+    #
+    #     # 轮盘选择城市
+    #     if total_prob > 0.0:
+    #         # 产生一个随机概率,0.0-total_prob
+    #         temp_prob = random.uniform(0.0, total_prob)
+    #         for i in Tasks:
+    #             if self.open_table_task[i]:
+    #                 # 轮次相减
+    #                 temp_prob -= select_tasks_prob[i]
+    #                 if temp_prob < 0.0:
+    #                     next_task = i
+    #                     break
         # without selecting the task according to the probability, randomly choose a task
         '''
         if next_task == -1:
@@ -114,39 +114,39 @@ class Ant(object):
                 next_task = random.randint(0,len(Tasks) - 1)
         '''
         # return to next task id
-        return next_task
+        # return next_task
 
     # calculate the total distance(completion time)
-    def __cal_total_distance(self):
-        temp_distance = 0.0
-        for i in range(1, len(self.path)):
-            start, end = self.path[i], self.path[i - 1]
-            temp_distance += visibility_graph[start][end]
-        # 回路
-        end = self.path[0]
-        temp_distance += visibility_graph[start][end]
-        self.total_distance = temp_distance
+    # def __cal_total_distance(self):
+    #     temp_distance = 0.0
+    #     for i in range(1, len(self.path)):
+    #         start, end = self.path[i], self.path[i - 1]
+    #         temp_distance += visibility_graph[start][end]
+    #     # 回路
+    #     end = self.path[0]
+    #     temp_distance += visibility_graph[start][end]
+    #     self.total_distance = temp_distance
 
     # ants movement
-    def __move(self, next_task):
-        self.path.append(next_task)
-        self.open_table_task[next_task] = False
-        self.total_distance += visibility_graph[self.current_task][next_task]
-        self.current_task = next_task
-        self.move_count += 1
+    # def __move(self, next_task):
+    #     self.path.append(next_task)
+    #     self.open_table_task[next_task] = False
+    #     self.total_distance += visibility_graph[self.current_task][next_task]
+    #     self.current_task = next_task
+    #     self.move_count += 1
 
     # search for the path
-    def search_path(self):
-        # initial the data
-        # self.__clean_data()
-        # search for the path until all the tasks have been assigned
-        # while any(self.open_table_task) == True:
-        # move to next task
-        next_task = self.__choice_next_task()
-        # self.__move(next_task)
-        # calculate the total distance
-        # self.__cal_total_distance()
-        return next_task
+    # def search_path(self):
+    #     # initial the data
+    #     # self.__clean_data()
+    #     # search for the path until all the tasks have been assigned
+    #     # while any(self.open_table_task) == True:
+    #     # move to next task
+    #     next_task = self.__choice_next_task()
+    #     # self.__move(next_task)
+    #     # calculate the total distance
+    #     # self.__cal_total_distance()
+    #     return next_task
 
 
 # -----Scheduling-----

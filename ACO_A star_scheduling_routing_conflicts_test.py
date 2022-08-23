@@ -587,7 +587,7 @@ if __name__ == '__main__':
     while True:
         print('------------------------iteration', iter,'------------------')
         #scheduling the task
-        print('------------------------Task assignemnt result------------------')
+        print('------------------------Task assignment result------------------')
         Task_assignment = SCHEDULING()
         #outputfile.close()  # close后才能看到写入的数据
         Task_assignment_result={}
