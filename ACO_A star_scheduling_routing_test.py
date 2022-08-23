@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas
 # 参数
 '''
 ALPHA:信息启发因子，值越大，则蚂蚁选择之前走过的路径可能性就越大
@@ -26,8 +27,8 @@ BETA:Beta值越大，蚁群越就容易选择局部较短路径，这时算法�
 Ant_num = 6
 
 # Input task list
-Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
-Task_list_routing = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
+Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
+Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph
@@ -515,7 +516,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
                 arrive_time_lst[TaskID][n]=2/speed + endtime_lasttask #previous route end time
 
             for i in range(1,len(reconst_path)):
-                arrive_time_lst[TaskID][reconst_path[i]] = 2 / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
+                arrive_time_lst[TaskID][reconst_path[i]] = init_graph[reconst_path[i-1]][reconst_path[i]] / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
 
             print('Path found for task',TaskID,':',reconst_path)
             print('The arrive time of each point',arrive_time_lst[TaskID])
@@ -563,10 +564,9 @@ def iteration_visulazation(iter,total_completion_time):
 
 # ----------- main -----------
 if __name__ == '__main__':
-    # input road map
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet1', usecols="A:C", skiprows=0, nrows=162,
-                                        dtype=object)
-    nodes = list(range(0, 159))
+    # input road map with 25 points
+    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
+    nodes = list(range(0, 25))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -574,8 +574,23 @@ if __name__ == '__main__':
     init_graph = {}
     for node in nodes:
         init_graph[node] = {}
-    for i in range(0, 161):
-        init_graph[Node1[i]][Node2[i]] = 2
+
+    for i in range(0, 27):
+        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
+
+
+    # Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet1', usecols="A:C", skiprows=0, nrows=162,
+    #                                     dtype=object)
+    # nodes = list(range(0, 159))
+    #
+    # Node1 = Manufacturing_Graph['Node1'].tolist()
+    # Node2 = Manufacturing_Graph['Node2'].tolist()
+    #
+    # init_graph = {}
+    # for node in nodes:
+    #     init_graph[node] = {}
+    # for i in range(0, 161):
+    #     init_graph[Node1[i]][Node2[i]] = 2
 
     graph = Graph(nodes, init_graph)
 
@@ -636,6 +651,42 @@ if __name__ == '__main__':
                     reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]] = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
                                                                   Task_list_routing.loc[Task_assignment_result[vehicle][j+1] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
                                                                   endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']])
+
+
+
+
+        #Finally check how many conflicts the map have
+        # Flatten the dictionary as a list of tuples [(vehicle_id,task_id,point,time)]
+        tuple_list = []
+        tuple_list_back = []
+
+        for vehicle_id in arrive_time.keys():
+            for task_id in arrive_time[vehicle_id].keys():
+                for point_id in arrive_time[vehicle_id][task_id].keys():
+                    # The format of the dictionary is arrive_time = {vehicle_id: {task_id: {point: time}}}
+                    tuple_list.append((vehicle_id, task_id, point_id, arrive_time[vehicle_id][task_id][point_id]))
+        for vehicle_id in arrive_time_back.keys():
+            for task_id in arrive_time_back[vehicle_id].keys():
+                for point_id in arrive_time_back[vehicle_id][task_id].keys():
+                    tuple_list_back.append((vehicle_id, task_id, point_id, arrive_time_back[vehicle_id][task_id][point_id]))
+
+
+        # Convert list of tuples to DataFrame for easier analysis
+        arrival_time_df = pandas.DataFrame.from_records(tuple_list,columns=["Vehicle ID", "Task ID", "Point ID", "Time"])
+        arrival_time_back_df = pandas.DataFrame.from_records(tuple_list_back,columns=["Vehicle ID", "Task ID", "Point ID", "Time"])
+
+        # Collision detection: If there is more than one vehicle at the same point at the same time we have a collision
+        # arrival_time_df.groupby(["Point ID","Time"]).filter(lambda x: x["Vehicle ID"].count() >= 2)
+
+        # Group by Point ID and Time, and count how many vehicles
+        arrival_time_count_df = arrival_time_df.groupby(["Point ID", "Time"]).count()
+        arrival_time_back_count_df = arrival_time_back_df.groupby(["Point ID", "Time"]).count()
+
+        # Show only those representing an actual collision
+        NumberofConflicts=arrival_time_count_df[arrival_time_count_df["Vehicle ID"] >= 2]
+        NumberofConflicts_back=arrival_time_back_count_df[arrival_time_back_count_df["Vehicle ID"] >= 2]
+
+
         iter +=1
 
         # find the maximum value in the arrive time of all vehicles

@@ -376,8 +376,8 @@ Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_rou
                               dtype=object)
 
 #----------------------------Routing parameters------------------------------------
-#safety distance between two vehicles on the link set as 2 seconds
-xi = 2
+#safety distance between two vehicles on the link set as 4 seconds
+xi = 4
 # safe time differnece between two vehicles at the same point (seconds)
 Ht = 0.2
 #the maximum number of conflicts density on link
