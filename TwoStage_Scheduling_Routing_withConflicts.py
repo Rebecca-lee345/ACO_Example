@@ -354,12 +354,12 @@ print('------------------------Task assignment result------------------')
 
 #scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
 
-scheduling_result={0: [1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1, -1, -1, -1, 95, -1, -1, -1, -1, -1, -1, -1, 126, -1, 127],
- 1: [4, 81, 82, 116, 3, 88, 49, 115, 123, 93, 41, 89, 79, 83, 85, 119, 6, 94, 42, 21, 125, -1, -1, 96, 50, -1, -1, -1, -1],
- 2: [7, 23, 121, 5, 0, 64, 24, 39, 19, 47, 43, 25, 11, 63, 20, 51, 52, 128, -1, -1, -1, -1, -1, -1, 45, -1, -1, -1, -1],
- 3: [10, 117, 90, 62, 91, 120, 40, 44, 124, 38, 53, 84, 18, 122, 114, 46, 80, 86, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
- 4: [13, 33, 70, 57, 17, 27, 103, 100, 58, 109, 139, 36, 69, 102, 132, 97, 65, 72, 60, 110, 134, 105, 73, 104, 34, 111, 29, 75, 99, 108, 77, 138, 35],
- 5: [16, 56, 15, 78, 59, 76, 32, 113, 30, 14, 68, 66, 133, 37, 67, 112, 26, 136, 101, 137, 106, 107, 61, 12, 131, 28, 98, 74, 129, 31, 135, 71, 130]}
+scheduling_result=[[1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1, -1, -1, -1, 95, -1, -1, -1, -1, -1, -1, -1, 126, -1, 127],
+    [4, 81, 82, 116, 3, 88, 49, 115, 123, 93, 41, 89, 79, 83, 85, 119, 6, 94, 42, 21, 125, -1, -1, 96, 50, -1, -1, -1, -1],
+ [7, 23, 121, 5, 0, 64, 24, 39, 19, 47, 43, 25, 11, 63, 20, 51, 52, 128, -1, -1, -1, -1, -1, -1, 45, -1, -1, -1, -1],
+ [10, 117, 90, 62, 91, 120, 40, 44, 124, 38, 53, 84, 18, 122, 114, 46, 80, 86, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+ [13, 33, 70, 57, 17, 27, 103, 100, 58, 109, 139, 36, 69, 102, 132, 97, 65, 72, 60, 110, 134, 105, 73, 104, 34, 111, 29, 75, 99, 108, 77, 138, 35],
+ [16, 56, 15, 78, 59, 76, 32, 113, 30, 14, 68, 66, 133, 37, 67, 112, 26, 136, 101, 137, 106, 107, 61, 12, 131, 28, 98, 74, 129, 31, 135, 71, 130]]
 
 
 
@@ -388,9 +388,9 @@ Hb = 2
 #penalty coefficient gamma 20s
 gamma = 20
 #maximum iteration number
-Max_iteration =20
+Max_iteration =50
 
-(node_num, ant_num_routing) = (25,40)
+(node_num, ant_num_routing) = (25,10)
 
 #visibility graph---the distance between nodes  and pheromone graph
 #visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
@@ -519,8 +519,7 @@ class ACO_Routing(object):
         self.__running = True
         self.iter = 1
         self.iter_total_completion_time=[]
-        self.NY = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
-        self.NZ = [ 0.0 for col in range(node_num)]
+
         # create the list to store the each vehicle fitness function
         self.vehicle_fitness_result = [[] for raw in range(6)]
         #create the list to record the total total fitness per iteration:Fitness calculation of historical optimal AGV group.minf max fpmeanfp
@@ -555,6 +554,9 @@ class ACO_Routing(object):
                     for point in range(0,25):
                         task_completion_time_forward[vehicle][task_id][point] = 0
                         task_completion_time_back[vehicle][task_id][point] = 0
+
+            self.NY = [[0.0 for col in range(node_num)] for raw in range(node_num)]
+            self.NZ = [0.0 for col in range(node_num)]
 
             #create the 3-d list to record the link collision for each vehicle
             a = [[0.0 for col in nodes] for raw in nodes]

@@ -206,7 +206,7 @@ if __name__ == '__main__':
         init_graph[node] = {}
 
     for i in range(0,161):
-        init_graph[Node1[i]][Node2[i]] = 2
+        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
 
     graph = Graph(nodes, init_graph)
 
