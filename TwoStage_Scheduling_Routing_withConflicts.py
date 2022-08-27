@@ -20,8 +20,10 @@ import pickle
 
 
 #-------------------------------------------Roadmap input----------------------------
-Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
+Manufacturing_Graph = pd.read_excel('Graph_25.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
+#nodes = list(range(0, 41))
 nodes = list(range(0, 25))
+
 
 Node1 = Manufacturing_Graph['Node1'].tolist()
 Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -30,9 +32,11 @@ init_graph = {}
 for node in nodes:
     init_graph[node] = {}
 
+# for i in range(0, 43):
+#     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
+
 for i in range(0, 27):
     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
-
 
 
 #------------------------------------------graph: roadmap for routing -------------------
@@ -352,14 +356,14 @@ print('------------------------Task assignment result------------------')
 #scheduling_result={}
 #scheduling_result=Task_assignment.vehicle_tasklist
 
-#scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
+scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
 
-scheduling_result=[[1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1, -1, -1, -1, 95, -1, -1, -1, -1, -1, -1, -1, 126, -1, 127],
-    [4, 81, 82, 116, 3, 88, 49, 115, 123, 93, 41, 89, 79, 83, 85, 119, 6, 94, 42, 21, 125, -1, -1, 96, 50, -1, -1, -1, -1],
- [7, 23, 121, 5, 0, 64, 24, 39, 19, 47, 43, 25, 11, 63, 20, 51, 52, 128, -1, -1, -1, -1, -1, -1, 45, -1, -1, -1, -1],
- [10, 117, 90, 62, 91, 120, 40, 44, 124, 38, 53, 84, 18, 122, 114, 46, 80, 86, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
- [13, 33, 70, 57, 17, 27, 103, 100, 58, 109, 139, 36, 69, 102, 132, 97, 65, 72, 60, 110, 134, 105, 73, 104, 34, 111, 29, 75, 99, 108, 77, 138, 35],
- [16, 56, 15, 78, 59, 76, 32, 113, 30, 14, 68, 66, 133, 37, 67, 112, 26, 136, 101, 137, 106, 107, 61, 12, 131, 28, 98, 74, 129, 31, 135, 71, 130]]
+# scheduling_result=[[1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1, -1, -1, -1, 95, -1, -1, -1, -1, -1, -1, -1, 126, -1, 127],
+#     [4, 81, 82, 116, 3, 88, 49, 115, 123, 93, 41, 89, 79, 83, 85, 119, 6, 94, 42, 21, 125, -1, -1, 96, 50, -1, -1, -1, -1],
+#  [7, 23, 121, 5, 0, 64, 24, 39, 19, 47, 43, 25, 11, 63, 20, 51, 52, 128, -1, -1, -1, -1, -1, -1, 45, -1, -1, -1, -1],
+#  [10, 117, 90, 62, 91, 120, 40, 44, 124, 38, 53, 84, 18, 122, 114, 46, 80, 86, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+#  [13, 33, 70, 57, 17, 27, 103, 100, 58, 109, 139, 36, 69, 102, 132, 97, 65, 72, 60, 110, 134, 105, 73, 104, 34, 111, 29, 75, 99, 108, 77, 138, 35],
+#  [16, 56, 15, 78, 59, 76, 32, 113, 30, 14, 68, 66, 133, 37, 67, 112, 26, 136, 101, 137, 106, 107, 61, 12, 131, 28, 98, 74, 129, 31, 135, 71, 130]]
 
 
 
@@ -368,7 +372,7 @@ scheduling_result=[[1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1,
 graph_input = Graph(nodes, init_graph)
 
 # Open pickle file and load it in a dictionary
-pickle_file = open("VisibilityGraphACO.pkl", "rb")
+pickle_file = open("VisibilityGraphACO_41.pkl", "rb")
 visibility_graph_ACO = pickle.load(pickle_file)
 
 #Task list input
@@ -378,7 +382,7 @@ Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_rou
 #----------------------------Routing parameters------------------------------------
 #safety distance between two vehicles on the link set as 4 seconds
 xi = 4
-# safe time differnece between two vehicles at the same point (seconds)
+# safe time difference between two vehicles at the same point (seconds)
 Ht = 0.2
 #the maximum number of conflicts density on link
 Ha= 2
@@ -388,10 +392,10 @@ Hb = 2
 #penalty coefficient gamma 20s
 gamma = 20
 #maximum iteration number
-Max_iteration =50
+Max_iteration =100
 
+#(node_num, ant_num_routing) = (41,10)
 (node_num, ant_num_routing) = (25,10)
-
 #visibility graph---the distance between nodes  and pheromone graph
 #visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
 pheromone_graph_routing = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
@@ -507,11 +511,7 @@ class ACO_Routing(object):
         for i in nodes:
             sum_node += max(0, NZ[i]+1-Hb)
         fitness_result= vehicle_total_distance + gamma * (sum_link + sum_node)
-
         return fitness_result
-
-
-
 
 
     def search_path(self, graph, scheudling_list):
@@ -519,6 +519,9 @@ class ACO_Routing(object):
         self.__running = True
         self.iter = 1
         self.iter_total_completion_time=[]
+
+        self.NY = [[0.0 for col in range(node_num)] for raw in range(node_num)]
+        self.NZ = [0.0 for col in range(node_num)]
 
         # create the list to store the each vehicle fitness function
         self.vehicle_fitness_result = [[] for raw in range(6)]
@@ -551,12 +554,12 @@ class ACO_Routing(object):
                     task_completion_time_back[vehicle][task_id] = {}
             for vehicle in range(6):
                 for task_id in range(-1,150):
-                    for point in range(0,25):
+                    for point in range(0,node_num):
                         task_completion_time_forward[vehicle][task_id][point] = 0
                         task_completion_time_back[vehicle][task_id][point] = 0
 
-            self.NY = [[0.0 for col in range(node_num)] for raw in range(node_num)]
-            self.NZ = [0.0 for col in range(node_num)]
+
+
 
             #create the 3-d list to record the link collision for each vehicle
             a = [[0.0 for col in nodes] for raw in nodes]
@@ -793,16 +796,22 @@ class ACO_Routing(object):
 
 
                     else:
-                        idle_time = random.randint(180, 360)
+                        idle_time = random.randint(180, 240)
                         total_completion_time[vehicle]+=idle_time
 
             #calculate the vehicle fitness function at each iteration
             for i in range(0,6):
                 self.vehicle_fitness_result[i].append(self.vehicle_fitness(self.vehicleNY[i],self.vehicleNZ[i],total_completion_time[vehicle]))
 
+            print('Vehicle path',vehicle_best_path)
+            print(total_completion_time)
+            print('Vehicle completion_time_forward',task_completion_time_forward)
+            print('------------------------------------------way back---------------------------------------------------------')
+            print('Vehicle completion_time_forward',task_completion_time_back)
 
-
+            #record each iteration maximum completion time
             self.iter_total_completion_time.append(max(total_completion_time))
+
             self.iter += 1
             if self.iter == Max_iteration:
                 print(vehicle_best_path)
@@ -817,7 +826,7 @@ class ACO_Routing(object):
                 print(task_completion_time_forward)
                 print('------------------------------------------way back---------------------------------------------------------')
                 print(task_completion_time_back)
-                return self.iter_total_completion_time,self.NY,self.NZ
+                return self.iter_total_completion_time,self.NY,self.NZ,self.fitness_result
 
                 self.__running= False
             else:

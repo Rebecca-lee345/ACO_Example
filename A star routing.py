@@ -252,9 +252,9 @@ if __name__ == '__main__':
 
     #generating visibility graph for ACO routing
     # -------------------------------------------Roadmap----------------------------
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,
+    Manufacturing_Graph = pd.read_excel('Graph_25.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,
                                         dtype=object)
-    nodes = list(range(0, 41))
+    nodes = list(range(0, 25))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -263,58 +263,58 @@ if __name__ == '__main__':
     for node in nodes:
         init_graph[node] = {}
 
-    for i in range(0, 43):
+    for i in range(0, 27):
         init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i, 'Distance']
 
     graph = Graph(nodes, init_graph)
 
 
-    # travel_distance = {}
-    # travel_distance_end={}
-    # travel_distance_sum={}
-    #
-    # for task in Tasks:
-    #     travel_distance[task] = {}
-    #     travel_distance_end[task] = {}
-    #     travel_distance_sum[task] = {}
-    #
-    # for task in Tasks:
-    #     for i in nodes:
-    #         travel_distance[task][i] = {}
-    #         travel_distance_end[task][i] = {}
-    #         travel_distance_sum[task][i] = {}
-    #
-    # for task in Tasks:
-    #     for i in nodes:
-    #         for j in nodes:
-    #             travel_distance[task][i][j] = 1
-    #             travel_distance_end[task][i][j] = 0
-    #             travel_distance_sum[task][i][j] = 1
-    #
-    #
-    # for task in Tasks:
-    #     for i in nodes:
-    #         for j in nodes:
-    #             travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
-    #             travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
-    #             travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
+    travel_distance = {}
+    travel_distance_end={}
+    travel_distance_sum={}
 
-
-    # with open("VisibilityGraphACO_41.pkl", "wb") as tf:
-    #     pickle.dump(travel_distance_sum, tf)
-
-    heuristic_Astar={}
     for task in Tasks:
-        heuristic_Astar[task]={}
+        travel_distance[task] = {}
+        travel_distance_end[task] = {}
+        travel_distance_sum[task] = {}
+
     for task in Tasks:
         for i in nodes:
-            heuristic_Astar[task][i] = 0
+            travel_distance[task][i] = {}
+            travel_distance_end[task][i] = {}
+            travel_distance_sum[task][i] = {}
+
     for task in Tasks:
         for i in nodes:
-            heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+            for j in nodes:
+                travel_distance[task][i][j] = 1
+                travel_distance_end[task][i][j] = 0
+                travel_distance_sum[task][i][j] = 1
 
-    with open("heuristic_Astar_41.pkl", "wb") as tf:
-        pickle.dump(heuristic_Astar, tf)
+
+    for task in Tasks:
+        for i in nodes:
+            for j in nodes:
+                travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
+                travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+                travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
+
+
+    with open("VisibilityGraphACO_25.pkl", "wb") as tf:
+        pickle.dump(travel_distance_sum, tf)
+
+    # heuristic_Astar={}
+    # for task in Tasks:
+    #     heuristic_Astar[task]={}
+    # for task in Tasks:
+    #     for i in nodes:
+    #         heuristic_Astar[task][i] = 0
+    # for task in Tasks:
+    #     for i in nodes:
+    #         heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+    #
+    # with open("heuristic_Astar_41.pkl", "wb") as tf:
+    #     pickle.dump(heuristic_Astar, tf)
 '''
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],
                                                  speed=1, TaskID=0, endtime_lasttask=0)

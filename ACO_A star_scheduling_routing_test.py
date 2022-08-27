@@ -513,7 +513,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
             reconst_path.reverse()
 
             if n == start:
-                arrive_time_lst[TaskID][n]=2/speed + endtime_lasttask #previous route end time
+                arrive_time_lst[TaskID][n]=init_graph[reconst_path[i-1]][reconst_path[i]]/speed + endtime_lasttask #previous route end time
 
             for i in range(1,len(reconst_path)):
                 arrive_time_lst[TaskID][reconst_path[i]] = init_graph[reconst_path[i-1]][reconst_path[i]] / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
@@ -696,7 +696,7 @@ if __name__ == '__main__':
                 arrive_time_back_max = max(arrive_time_back[vehicle][Task_assignment_result[vehicle][len(Task_assignment_result[1])-3]].values())
 
         total_travel_time.append(arrive_time_back_max)
-        if iter == 2:
+        if iter == 100:
             #result of scheduling without considering the idle time,routing
             iteration_visulazation(iter, total_completion_time_result)
             #result after routing
