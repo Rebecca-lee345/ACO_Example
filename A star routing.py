@@ -149,10 +149,10 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
             reconst_path.reverse()
 
             if n == start:
-                arrive_time_lst[TaskID][n]=2/speed + endtime_lasttask #previous route end time
+                arrive_time_lst[TaskID][n]= endtime_lasttask #previous route end time
 
             for i in range(1,len(reconst_path)):
-                arrive_time_lst[TaskID][reconst_path[i]] = 2 / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
+                arrive_time_lst[TaskID][reconst_path[i]] = init_graph[reconst_path[i-1]][reconst_path[i]] / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
 
             completion_time = arrive_time_lst[TaskID][reconst_path[len(reconst_path)-1]]
 
@@ -269,40 +269,52 @@ if __name__ == '__main__':
     graph = Graph(nodes, init_graph)
 
 
-    travel_distance = {}
-    travel_distance_end={}
-    travel_distance_sum={}
+    # travel_distance = {}
+    # travel_distance_end={}
+    # travel_distance_sum={}
+    #
+    # for task in Tasks:
+    #     travel_distance[task] = {}
+    #     travel_distance_end[task] = {}
+    #     travel_distance_sum[task] = {}
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         travel_distance[task][i] = {}
+    #         travel_distance_end[task][i] = {}
+    #         travel_distance_sum[task][i] = {}
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         for j in nodes:
+    #             travel_distance[task][i][j] = 1
+    #             travel_distance_end[task][i][j] = 0
+    #             travel_distance_sum[task][i][j] = 1
+    #
+    #
+    # for task in Tasks:
+    #     for i in nodes:
+    #         for j in nodes:
+    #             travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
+    #             travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+    #             travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
 
+
+    # with open("VisibilityGraphACO_41.pkl", "wb") as tf:
+    #     pickle.dump(travel_distance_sum, tf)
+
+    heuristic_Astar={}
     for task in Tasks:
-        travel_distance[task] = {}
-        travel_distance_end[task] = {}
-        travel_distance_sum[task] = {}
-
+        heuristic_Astar[task]={}
     for task in Tasks:
         for i in nodes:
-            travel_distance[task][i] = {}
-            travel_distance_end[task][i] = {}
-            travel_distance_sum[task][i] = {}
-
+            heuristic_Astar[task][i] = 0
     for task in Tasks:
         for i in nodes:
-            for j in nodes:
-                travel_distance[task][i][j] = 1
-                travel_distance_end[task][i][j] = 0
-                travel_distance_sum[task][i][j] = 1
+            heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
 
-
-    for task in Tasks:
-        for i in nodes:
-            for j in nodes:
-                travel_distance[task][i][j]=a_star_algorithm(graph,i,j,speed=1,TaskID=task,endtime_lasttask= 0)
-                travel_distance_end[task][i][j]=a_star_algorithm(graph,j,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
-                travel_distance_sum[task][i][j] = travel_distance[task][i][j]+ travel_distance_end[task][i][j]
-
-
-    with open("VisibilityGraphACO_41.pkl", "wb") as tf:
-        pickle.dump(travel_distance_sum, tf)
-
+    with open("heuristic_Astar_41.pkl", "wb") as tf:
+        pickle.dump(heuristic_Astar, tf)
 '''
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],
                                                  speed=1, TaskID=0, endtime_lasttask=0)
