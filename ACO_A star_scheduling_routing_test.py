@@ -513,7 +513,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask):
             reconst_path.reverse()
 
             if n == start:
-                arrive_time_lst[TaskID][n]=init_graph[reconst_path[i-1]][reconst_path[i]]/speed + endtime_lasttask #previous route end time
+                arrive_time_lst[TaskID][n]=endtime_lasttask #previous route end time
 
             for i in range(1,len(reconst_path)):
                 arrive_time_lst[TaskID][reconst_path[i]] = init_graph[reconst_path[i-1]][reconst_path[i]] / speed + arrive_time_lst[TaskID][reconst_path[i-1]]
@@ -565,8 +565,8 @@ def iteration_visulazation(iter,total_completion_time):
 # ----------- main -----------
 if __name__ == '__main__':
     # input road map with 25 points
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
-    nodes = list(range(0, 25))
+    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
+    nodes = list(range(0, 41))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -575,8 +575,8 @@ if __name__ == '__main__':
     for node in nodes:
         init_graph[node] = {}
 
-    for i in range(0, 27):
-        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
+    for i in range(0, 43):
+        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']*3
 
 
     # Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet1', usecols="A:C", skiprows=0, nrows=162,

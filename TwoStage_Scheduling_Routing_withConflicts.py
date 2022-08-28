@@ -12,6 +12,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import datetime
+
+starttime = datetime.datetime.now()
 
 
 
@@ -20,9 +23,9 @@ import pickle
 
 
 #-------------------------------------------Roadmap input----------------------------
-Manufacturing_Graph = pd.read_excel('Graph_25.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=27,dtype=object)
-#nodes = list(range(0, 41))
-nodes = list(range(0, 25))
+Manufacturing_Graph = pd.read_excel('Graph_25.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
+nodes = list(range(0, 41))
+#nodes = list(range(0, 25))
 
 
 Node1 = Manufacturing_Graph['Node1'].tolist()
@@ -32,11 +35,11 @@ init_graph = {}
 for node in nodes:
     init_graph[node] = {}
 
-# for i in range(0, 43):
-#     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
-
-for i in range(0, 27):
+for i in range(0, 43):
     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
+
+# for i in range(0, 27):
+#     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
 
 
 #------------------------------------------graph: roadmap for routing -------------------
@@ -103,7 +106,7 @@ class SAnt(object):
 Ant_num = 6
 
 # Input task list
-Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
+Task_list = pd.read_excel('Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18, dtype=object)
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph for scheduling
@@ -351,12 +354,12 @@ class SCHEDULING(object):
 
 #scheduling the task
 print('------------------------Task assignment result------------------')
-#Task_assignment = SCHEDULING()
+Task_assignment = SCHEDULING()
 
-#scheduling_result={}
-#scheduling_result=Task_assignment.vehicle_tasklist
+scheduling_result={}
+scheduling_result=Task_assignment.vehicle_tasklist
 
-scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
+# scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 12, 15]]
 
 # scheduling_result=[[1, 2, 8, 48, 9, 87, 22, 54, 118, 55, 92, -1, -1, -1, -1, -1, -1, -1, -1, 95, -1, -1, -1, -1, -1, -1, -1, 126, -1, 127],
 #     [4, 81, 82, 116, 3, 88, 49, 115, 123, 93, 41, 89, 79, 83, 85, 119, 6, 94, 42, 21, 125, -1, -1, 96, 50, -1, -1, -1, -1],
@@ -364,7 +367,7 @@ scheduling_result=[[1, 11, 8],[4, 2, 3],[7, 9, 6],[10, 0, 5],[13, 17, 14],[16, 1
 #  [10, 117, 90, 62, 91, 120, 40, 44, 124, 38, 53, 84, 18, 122, 114, 46, 80, 86, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 #  [13, 33, 70, 57, 17, 27, 103, 100, 58, 109, 139, 36, 69, 102, 132, 97, 65, 72, 60, 110, 134, 105, 73, 104, 34, 111, 29, 75, 99, 108, 77, 138, 35],
 #  [16, 56, 15, 78, 59, 76, 32, 113, 30, 14, 68, 66, 133, 37, 67, 112, 26, 136, 101, 137, 106, 107, 61, 12, 131, 28, 98, 74, 129, 31, 135, 71, 130]]
-
+#
 
 
 #----------------------------------------------------------------------- Ant colony routing -----------
@@ -394,8 +397,8 @@ gamma = 20
 #maximum iteration number
 Max_iteration =100
 
-#(node_num, ant_num_routing) = (41,10)
-(node_num, ant_num_routing) = (25,10)
+(node_num, ant_num_routing) = (41,10)
+# (node_num, ant_num_routing) = (25,10)
 #visibility graph---the distance between nodes  and pheromone graph
 #visibility_graph = [ [0.0 for col in range(node_num)] for raw in range(node_num)]
 pheromone_graph_routing = [ [1.0 for col in range(node_num)] for raw in range(node_num)]
@@ -432,7 +435,7 @@ class RAnt(object):
 
 
 class ACO_Routing(object):
-    def __init__(self, n = node_num,graph=graph_input, scheudling_list=scheduling_result):
+    def __init__(self, n = node_num,graph=graph_input, scheduling_list=scheduling_result):
 
         # initial node number is n
         self.n = n
@@ -443,7 +446,7 @@ class ACO_Routing(object):
         #         temp_distance = random.randint(225, 450)
         #         visibility_graph[i][j] = float(int(temp_distance + 0.5))
         #search the path
-        self.search_path(graph,scheudling_list)
+        self.search_path(graph,scheduling_list)
 
 
     # 初始化
@@ -467,12 +470,12 @@ class ACO_Routing(object):
 
     def __clean_data(self):
         # create a dic to store the best path for each vehicle each task
-        vehicle_best_path = {}
+        vehicle_path = {}
         for vehicle in range(6):
-            vehicle_best_path[vehicle] = {}
+            vehicle_path[vehicle] = {}
         for vehicle in range(6):
             for task_id in range(-1, 150):
-                vehicle_best_path[vehicle][task_id] = {}
+                vehicle_path[vehicle][task_id] = {}
 
     # Function to check if there are collision on each link
     def check_link_collision(self,check_list):
@@ -525,18 +528,29 @@ class ACO_Routing(object):
 
         # create the list to store the each vehicle fitness function
         self.vehicle_fitness_result = [[] for raw in range(6)]
+        self.fitness_result = [0.0 for raw in range(6)]
         #create the list to record the total total fitness per iteration:Fitness calculation of historical optimal AGV group.minf max fpmeanfp
         #self.fitness_result=[]
+
+        best_result_waiting_time = []
+        best_result_idle_time = []
+        best_iter = 0
+        best_iter_fitness = 100000000
+        best_sum_travel_time_vehicle = []
+        best_total_completion_time = {}
+        best_vehicle_path ={}
+        best_vehicle_NY={}
+        best_vehicle_NZ={}
 
 
         while self.__running:
             # create a dic to store the best path for each vehicle each task
-            vehicle_best_path = {}
+            vehicle_path = {}
             for vehicle in range(6):
-                vehicle_best_path[vehicle] = {}
+                vehicle_path[vehicle] = {}
             for vehicle in range(6):
                 for task_id in range(-1, 150):
-                    vehicle_best_path[vehicle][task_id] = {}
+                    vehicle_path[vehicle][task_id] = {}
 
 
             #creat the list to store the path travelling time
@@ -567,7 +581,15 @@ class ACO_Routing(object):
             # create the 2-d list to record the link collision for each vehicle
             self.vehicleNZ = [[0.0 for col in range(node_num)] for raw in range(6)]
 
+            # record the idle time for each vehicle
+            vehicle_idle_time = {}
+            for vehicle in range(6):
+                vehicle_idle_time[vehicle] = 0
 
+            #record the full-load travel time of vehicle
+            sum_travel_time_vehicle = {}
+            for vehicle in range(6):
+                sum_travel_time_vehicle[vehicle] = 0
 
 
 
@@ -640,11 +662,13 @@ class ACO_Routing(object):
                         #print (u"vehicle number：",vehicle,u"最佳路径总距离：",int(self.best_ant.total_distance))
                         #print(u"the index of iteration：", self.iter, self.best_ant.path, ant.current_node)
                         # store the best path for each vehicle each task for the forward path searching
-                        vehicle_best_path[vehicle][scheudling_list[vehicle][task_location]] =self.best_ant.path
+                        vehicle_path[vehicle][scheudling_list[vehicle][task_location]] =self.best_ant.path
                         #vehicle的第一个点的开始时间等于vehicle完成上一个任务的完成时间
                         task_completion_time_forward[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[0]]=total_completion_time[vehicle]
                         # each vehicle's total completion time
                         total_completion_time[vehicle] += self.best_ant.total_distance/Task_list_routing.loc[scheudling_list[vehicle][task_location],'speed']+Task_list_routing.loc[scheudling_list[vehicle][task_location],'loading time']
+                        sum_travel_time_vehicle[vehicle] += self.best_ant.total_distance/Task_list_routing.loc[scheudling_list[vehicle][task_location],'speed']+Task_list_routing.loc[scheudling_list[vehicle][task_location],'loading time']
+
 
                         #vehicle 在每一个点的到达时间
                         for point in range(1,len(self.best_ant.path)):
@@ -752,7 +776,7 @@ class ACO_Routing(object):
                         #print(u"vehicle number：", vehicle, u"最佳路径总距离：", int(self.best_ant.total_distance))
                         #print(u"the index of iteration：", self.iter, self.best_ant.path, ant.current_node)
                         # store the best path for each vehicle each task for the forward path searching
-                        vehicle_best_path[vehicle][scheudling_list[vehicle][task_location]].extend(self.best_ant.path)
+                        vehicle_path[vehicle][scheudling_list[vehicle][task_location]].extend(self.best_ant.path)
 
                         #vehicle的第一个点的开始时间等于vehicle完成上一个任务的完成时间
                         task_completion_time_back[vehicle][scheudling_list[vehicle][task_location]][self.best_ant.path[0]]=total_completion_time[vehicle]
@@ -797,36 +821,57 @@ class ACO_Routing(object):
 
                     else:
                         idle_time = random.randint(180, 240)
+                        vehicle_idle_time[vehicle] += idle_time
+
                         total_completion_time[vehicle]+=idle_time
 
             #calculate the vehicle fitness function at each iteration
             for i in range(0,6):
+                self.fitness_result[i] = self.vehicle_fitness(self.vehicleNY[i],self.vehicleNZ[i],total_completion_time[vehicle])
                 self.vehicle_fitness_result[i].append(self.vehicle_fitness(self.vehicleNY[i],self.vehicleNZ[i],total_completion_time[vehicle]))
 
-            print('Vehicle path',vehicle_best_path)
-            print(total_completion_time)
-            print('Vehicle completion_time_forward',task_completion_time_forward)
-            print('------------------------------------------way back---------------------------------------------------------')
-            print('Vehicle completion_time_forward',task_completion_time_back)
+            # print('Vehicle path',vehicle_path)
+            # print(total_completion_time)
+            # print('Vehicle completion_time_forward',task_completion_time_forward)
+            # print('------------------------------------------way back---------------------------------------------------------')
+            # print('Vehicle completion_time_forward',task_completion_time_back)
 
             #record each iteration maximum completion time
             self.iter_total_completion_time.append(max(total_completion_time))
 
+            if best_iter_fitness > max(self.fitness_result):
+                best_iter_fitness = max(self.fitness_result)
+                best_result_idle_time = vehicle_idle_time
+                best_iter = self.iter
+                best_sum_travel_time_vehicle = sum_travel_time_vehicle
+                best_total_completion_time = total_completion_time
+                best_vehicle_path = vehicle_path
+                best_vehicle_NY = self.vehicleNY
+                best_vehicle_NZ = self.vehicleNZ
+
+
             self.iter += 1
             if self.iter == Max_iteration:
-                print(vehicle_best_path)
-                print(total_completion_time)
-                print(self.iter_total_completion_time)
+                print('fitness result',best_iter_fitness)
+                print('idle time matrix',best_result_idle_time)
+                print('best iteration',best_iter)
+                print('full-load travle time for each vehicle',best_sum_travel_time_vehicle)
+                print('travel time for each vehicle',best_total_completion_time)
+                print('path for each vehicle',best_vehicle_path)
+                print('link conflicts',best_vehicle_NY)
+                print('node conflicts',best_vehicle_NZ)
 
+
+                print(self.iter_total_completion_time)
                 self.vehicle_fitness_result = np.array(self.vehicle_fitness_result)
                 self.fitness_result=np.max(self.vehicle_fitness_result, axis=0)+ np.mean(self.vehicle_fitness_result, axis=0)
                 print(self.fitness_result)
 
 
-                print(task_completion_time_forward)
-                print('------------------------------------------way back---------------------------------------------------------')
-                print(task_completion_time_back)
-                return self.iter_total_completion_time,self.NY,self.NZ,self.fitness_result
+                # print(task_completion_time_forward)
+                # print('------------------------------------------way back---------------------------------------------------------')
+                # print(task_completion_time_back)
+                return self.iter_total_completion_time,self.vehicleNY,self.vehicleNZ,self.fitness_result
 
                 self.__running= False
             else:
@@ -859,12 +904,16 @@ class ACO_Routing(object):
 
 
 
-def iteration_visulazation(iter,total_completion_time):
+def iteration_visulazation(iter,total_completion_time,fitness_result):
     # Apply the default theme
     sns.set()
+    plt.title('Result Analysis')
     x = range(0, iter - 1)
-    y = total_completion_time
-    plt.plot(x, y)
+    y1 = total_completion_time
+    y2 = fitness_result
+    plt.plot(x, y1, color='green', label='total completion time')
+    plt.plot(x, y2, color='red', label='fitness function')
+    plt.legend()  # 显示图例
     plt.xlabel('The iteration')
     plt.ylabel('The makespan of the operation')
     plt.show()
@@ -874,9 +923,12 @@ if __name__ == '__main__':
 
     Routing=ACO_Routing()
     total_completion_time_result=Routing.iter_total_completion_time
-    iteration_visulazation(Max_iteration, total_completion_time_result)
+    fitness=Routing.fitness_result
+    iteration_visulazation(Max_iteration, total_completion_time_result,fitness)
 
     NumberofLinkconflicts=Routing.NY
     NumberofNodeconflicts = Routing.NZ
+    endtime = datetime.datetime.now()
+    print((endtime - starttime).seconds)
 
 
