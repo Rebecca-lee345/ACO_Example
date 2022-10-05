@@ -23,7 +23,7 @@ starttime = datetime.datetime.now()
 
 
 #-------------------------------------------Roadmap input----------------------------
-Manufacturing_Graph = pd.read_excel('Graph_25.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
+Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
 nodes = list(range(0, 41))
 #nodes = list(range(0, 25))
 
@@ -395,7 +395,7 @@ Hb = 2
 #penalty coefficient gamma 20s
 gamma = 20
 #maximum iteration number
-Max_iteration =100
+Max_iteration =50
 
 (node_num, ant_num_routing) = (41,10)
 # (node_num, ant_num_routing) = (25,10)
@@ -832,9 +832,9 @@ class ACO_Routing(object):
 
             # print('Vehicle path',vehicle_path)
             # print(total_completion_time)
-            # print('Vehicle completion_time_forward',task_completion_time_forward)
-            # print('------------------------------------------way back---------------------------------------------------------')
-            # print('Vehicle completion_time_forward',task_completion_time_back)
+            print('Vehicle completion_time_forward',task_completion_time_forward)
+            print('------------------------------------------way back---------------------------------------------------------')
+            print('Vehicle completion_time_forward',task_completion_time_back)
 
             #record each iteration maximum completion time
             self.iter_total_completion_time.append(max(total_completion_time))
