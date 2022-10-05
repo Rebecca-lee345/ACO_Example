@@ -40,8 +40,13 @@ Ht = 12
 safety_waiting_time= 12
 
 # Input task list
-Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
-Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
+# Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
+# Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
+
+Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18, dtype=object)
+Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18, dtype=object)
+
+
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph
@@ -392,11 +397,11 @@ class SCHEDULING(object):
 
 # input A star heuristics information
 # Open pickle file and load it in a dictionary
-pickle_file = open("heuristic_Astar_41.pkl", "rb")
+pickle_file = open("heuristic_Astar_15.pkl", "rb")
 heuristic_Astar = pickle.load(pickle_file)
 
 heuristic_Astar[-1] = {}
-for i in range(0,41):
+for i in range(0,15):
     heuristic_Astar[-1][i]=0
 class Graph(object):
     def __init__(self, nodes, init_graph):
@@ -566,9 +571,9 @@ def iteration_visulazation(iter,total_completion_time):
 
 # ----------- main -----------
 if __name__ == '__main__':
-    # input road map with 25 points
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
-    nodes = list(range(0, 41))
+    # input test road map with 15 points
+    Manufacturing_Graph = pd.read_excel('Test_Graph.xlsx', sheet_name='Sheet1', usecols="A:C", skiprows=0, nrows=22,dtype=object)
+    nodes = list(range(0, 15))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -577,8 +582,22 @@ if __name__ == '__main__':
     for node in nodes:
         init_graph[node] = {}
 
-    for i in range(0, 43):
+    for i in range(0, 22):
         init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']*3
+
+    # input road map with 41 points
+    # Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
+    # nodes = list(range(0, 41))
+    #
+    # Node1 = Manufacturing_Graph['Node1'].tolist()
+    # Node2 = Manufacturing_Graph['Node2'].tolist()
+    #
+    # init_graph = {}
+    # for node in nodes:
+    #     init_graph[node] = {}
+    #
+    # for i in range(0, 43):
+    #     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']*3
 
 
     #Map with 159 points
