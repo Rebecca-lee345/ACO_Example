@@ -30,7 +30,7 @@ ALPHA:信息启发因子，值越大，则蚂蚁选择之前走过的路径可�
 BETA:Beta值越大，蚁群越就容易选择局部较短路径，这时算法收敛速度会
      加快，但是随机性不高，容易得到局部的相对最优
 '''
-(ALPHA, BETA, RHO, Q) = (1.0, 2.0, 0.5, 100.0)
+(ALPHA, BETA, RHO, Q) = (1, 1, 0.5, 100.0)
 # ----Ant----
 Ant_num = 6
 
@@ -44,13 +44,14 @@ safety_waiting_time= 12
 # Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
 
 Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18, dtype=object)
-Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18, dtype=object)
+Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=19, dtype=object)
 
 
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph
-visibility_graph=pd.read_excel('Visibility_graph.xlsx', sheet_name='Sheet1', usecols="B:EK", skiprows=0, nrows=141, dtype=object)
+#visibility_graph=pd.read_excel('Visibility_graph.xlsx', sheet_name='Sheet1', usecols="B:EK", skiprows=0, nrows=141, dtype=object)
+visibility_graph=pd.read_excel('Test_Visibility_graph.xlsx', sheet_name='Sheet1', usecols="A:EK", skiprows=0, nrows=18, dtype=object)
 visibility_graph=visibility_graph.values
 
 
@@ -583,7 +584,7 @@ if __name__ == '__main__':
         init_graph[node] = {}
 
     for i in range(0, 22):
-        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']*3
+        init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
 
     # input road map with 41 points
     # Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
@@ -729,7 +730,7 @@ if __name__ == '__main__':
 
 
         #the rest tasks
-        for j in range(1,len(Task_assignment_result[1])-1):
+        for j in range(1,len(Task_assignment_result[1])-2):
             for vehicle in range(1,7):
                 waiting_taskid = -2
                 waiting_point = -1
@@ -814,6 +815,94 @@ if __name__ == '__main__':
 
                     reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time_back = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
                                                                   Task_list_routing.loc[Task_assignment_result[vehicle][j+1] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
+                                                                  endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+
+        #the last 1 task
+        for j in range(len(Task_assignment_result[1])-2,len(Task_assignment_result[1])-1):
+            for vehicle in range(1,7):
+                waiting_taskid = -2
+                waiting_point = -1
+                update = 1
+                check_conflicts = True
+                check_conflicts_back = True
+
+                if Task_assignment_result[vehicle][j] != -1:
+                    print('------------------vehicle------------------',vehicle)
+                    reconst_path, arrive_time[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                                 Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'] / 2, TaskID=Task_assignment_result[vehicle][j],
+                                                                 endtime_lasttask=arrive_time_back[vehicle][Task_assignment_result[vehicle][j-1]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node']]+Task_list_routing.loc[Task_assignment_result[vehicle][j], 'loading time'],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+
+                    sum_travel_time_vehicle[vehicle] += tem_travel_time
+
+                    reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time_back = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                                  Task_list_routing.loc[Task_assignment_result[vehicle][j] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
+                                                                  endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']]+Task_list_routing.loc[Task_assignment_result[vehicle][j], 'unloading time'],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+
+
+                    while check_conflicts:
+
+                        #check conflicts happened at points and pose the waiting time at each point
+                        # check if there is a collision on the Node
+                        for point in range(0, len(reconst_path)):
+                            current_nodetime = arrive_time[vehicle][Task_assignment_result[vehicle][j]][reconst_path[point]]
+                            for v in range(1, 7):
+                                for t in range(0, 150):
+                                    if arrive_time[v][t] != {} and arrive_time[v][t].__contains__(reconst_path[point]):
+                                        time_difference = abs(current_nodetime - arrive_time[v][t][reconst_path[point]])
+                                        if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
+                                            waiting_taskid = Task_assignment_result[vehicle][j]
+                                            waiting_point= reconst_path[point]
+                                            reconst_path, arrive_time[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                                 Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'] / 2, TaskID=Task_assignment_result[vehicle][j],
+                                                                 endtime_lasttask=arrive_time_back[vehicle][Task_assignment_result[vehicle][j-1]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node']]+Task_list_routing.loc[Task_assignment_result[vehicle][j], 'loading time'],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+
+                                            reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time_back = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                                  Task_list_routing.loc[Task_assignment_result[vehicle][j] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
+                                                                  endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']]+Task_list_routing.loc[Task_assignment_result[vehicle][j], 'unloading time'],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+                                            waiting_time[v] += safety_waiting_time
+                                            update += 1
+                                        else:
+                                            check_conflicts =False
+
+                    while check_conflicts_back:
+
+                        #check conflicts happened at points and pose the waiting time at each point
+                        # check if there is a collision on the Node
+                        for point in range(0, len(reconst_path_back)):
+                            current_nodetime_back = arrive_time_back[vehicle][Task_assignment_result[vehicle][j]][reconst_path_back[point]]
+                            for v in range(1, 7):
+                                for t in range(0, 150):
+                                    if arrive_time_back[v][t] != {} and arrive_time_back[v][t].__contains__(reconst_path_back[point]):
+                                        time_difference = abs(current_nodetime - arrive_time_back[v][t][reconst_path_back[point]])
+                                        if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
+                                            waiting_taskid = Task_assignment_result[vehicle][j]
+                                            waiting_point= reconst_path_back[point]
+                                            reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time_back = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                                  Task_list_routing.loc[Task_assignment_result[vehicle][j] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
+                                                                  endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']]+Task_list_routing.loc[Task_assignment_result[vehicle][j], 'unloading time'],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+                                            waiting_time[v] += safety_waiting_time
+                                            update += 1
+                                        else:
+                                            check_conflicts_back =False
+
+
+
+
+                else:
+                    print('------------------vehicle------------------',vehicle)
+                    idle_time=random.randint(180, 360)
+                    vehicle_idle_time[vehicle] += idle_time
+
+
+                    reconst_path, arrive_time[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node'],
+                                                                 Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'] / 2, TaskID=Task_assignment_result[vehicle][j],
+                                                                 endtime_lasttask=arrive_time_back[vehicle][Task_assignment_result[vehicle][j-1]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'Start node']] + idle_time,wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
+                    sum_travel_time_vehicle[vehicle] += tem_travel_time
+
+
+
+                    reconst_path_back, arrive_time_back[vehicle][Task_assignment_result[vehicle][j]],tem_travel_time_back = a_star_algorithm(graph, Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node'],
+                                                                  Task_list_routing.loc[Task_assignment_result[vehicle][j] , 'Start node'], speed=Task_list_routing.loc[Task_assignment_result[vehicle][j], 'speed'], TaskID=Task_assignment_result[vehicle][j],
                                                                   endtime_lasttask=arrive_time[vehicle][Task_assignment_result[vehicle][j]][Task_list_routing.loc[Task_assignment_result[vehicle][j], 'End node']],wait_taskid=waiting_taskid, wait_point=waiting_point,wait_co=update)
 
 

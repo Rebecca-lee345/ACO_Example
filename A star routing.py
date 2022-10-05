@@ -224,9 +224,9 @@ if __name__ == '__main__':
 
     # Input task list
     #Task_list = pd.read_excel('Task_list_Test.xlsx', sheet_name='Tasklist', usecols="A:G", skiprows=0, nrows=6, dtype=object)
-    Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18,
+    Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=36,
                               dtype=object)
-    Task_list_visibility = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=18,
+    Task_list_visibility = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=36,
                               dtype=object)
 
     Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
@@ -351,18 +351,18 @@ if __name__ == '__main__':
     #保存到本地excel
     df.to_excel("Test_Visibility_graph.xlsx", index=False)
     #-------------A star heuristics-----------------------
-    # heuristic_Astar={}
-    # for task in Tasks:
-    #     heuristic_Astar[task]={}
-    # for task in Tasks:
-    #     for i in nodes:
-    #         heuristic_Astar[task][i] = 0
-    # for task in Tasks:
-    #     for i in nodes:
-    #         heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
-    #
-    # with open("heuristic_Astar_15.pkl", "wb") as tf:
-    #     pickle.dump(heuristic_Astar, tf)
+    heuristic_Astar={}
+    for task in Tasks:
+        heuristic_Astar[task]={}
+    for task in Tasks:
+        for i in nodes:
+            heuristic_Astar[task][i] = 0
+    for task in Tasks:
+        for i in nodes:
+            heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
+
+    with open("heuristic_Astar_15.pkl", "wb") as tf:
+        pickle.dump(heuristic_Astar, tf)
 
 
 
