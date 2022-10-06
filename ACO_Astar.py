@@ -30,7 +30,11 @@ ALPHA:信息启发因子，值越大，则蚂蚁选择之前走过的路径可�
 BETA:Beta值越大，蚁群越就容易选择局部较短路径，这时算法收敛速度会
      加快，但是随机性不高，容易得到局部的相对最优
 '''
-(ALPHA, BETA, RHO, Q) = (5, 1.5, 0.5, 100.0)
+
+tasknumber = 120
+
+
+(ALPHA, BETA, RHO, Q) = (2, 1, 0.5, 100.0)
 # ----Ant----
 Ant_num = 6
 
@@ -43,15 +47,15 @@ safety_waiting_time= 12
 # Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
 # Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
 
-Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=36, dtype=object)
-Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=37, dtype=object)
+Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=tasknumber, dtype=object)
+Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=tasknumber+1, dtype=object)
 
 
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph
 #visibility_graph=pd.read_excel('Visibility_graph.xlsx', sheet_name='Sheet1', usecols="B:EK", skiprows=0, nrows=141, dtype=object)
-visibility_graph=pd.read_excel('Test_Visibility_graph.xlsx', sheet_name='Sheet1', usecols="A:EK", skiprows=0, nrows=36, dtype=object)
+visibility_graph=pd.read_excel('Test_Visibility_graph.xlsx', sheet_name='Sheet1', usecols="A:EK", skiprows=0, nrows= tasknumber, dtype=object)
 visibility_graph=visibility_graph.values
 
 
@@ -632,6 +636,8 @@ if __name__ == '__main__':
     best_sum_travel_time_vehicle=[]
     best_arrive_time={}
     best_arrive_time_back={}
+    best_conflicts = {}
+    best_conflicts_back= {}
     iter = 1
 
     while True:
@@ -954,6 +960,8 @@ if __name__ == '__main__':
             best_sum_travel_time_vehicle=sum_travel_time_vehicle
             best_arrive_time = arrive_time
             best_arrive_time_back=arrive_time_back
+            best_conflicts = NumberofConflicts
+            best_conflicts_back = NumberofConflicts_back
 
         iter += 1
         if iter == 100:
