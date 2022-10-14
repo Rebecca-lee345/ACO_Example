@@ -218,7 +218,7 @@ if __name__ == '__main__':
         arrive_time[vehicle] = {}
         arrive_time_back[vehicle] = {}
     for vehicle in range(1,7):
-        for id in range(-1,150):
+        for id in range(-1,300):
             arrive_time[vehicle][id] = {}
             arrive_time_back[vehicle][id] ={}
 
@@ -229,9 +229,9 @@ if __name__ == '__main__':
     # Task_list_visibility = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=121,
     #                           dtype=object)
 
-    Task_list = pd.read_excel('Task_list_E_11.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=124,
+    Task_list = pd.read_excel('Task_list_E_22.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=280,
                               dtype=object)
-    Task_list_visibility = pd.read_excel('Task_list_E_11.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=124,
+    Task_list_visibility = pd.read_excel('Task_list_E_22.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=280,
                               dtype=object)
 
     Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
@@ -255,9 +255,9 @@ if __name__ == '__main__':
 
     #generating visibility graph for ACO routing
     # -------------------------------------------Roadmap----------------------------
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=43,
+    Manufacturing_Graph = pd.read_excel('Graph_E_21.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=59,
                                         dtype=object)
-    nodes = list(range(0, 41))
+    nodes = list(range(0, 52))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     for node in nodes:
         init_graph[node] = {}
 
-    for i in range(0, 43):
+    for i in range(0, 58):
         init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i, 'Distance']
 
     graph = Graph(nodes, init_graph)
@@ -415,7 +415,7 @@ if __name__ == '__main__':
     travel_time_total=np.sum([travel_time,travel_time_back], axis = 0)
     df = pd.DataFrame(travel_time_total, columns=[Tasks])
     #保存到本地excel
-    df.to_excel("Visibility_graph_E_11.xlsx", index=False)
+    df.to_excel("Visibility_graph_E_21.xlsx", index=False)
     #-------------A star heuristics-----------------------
     heuristic_Astar={}
     for task in Tasks:
@@ -427,7 +427,7 @@ if __name__ == '__main__':
         for i in nodes:
             heuristic_Astar[task][i]=a_star_algorithm(graph,i,Task_list_visibility.loc[task,'End node'],speed=1,TaskID=task,endtime_lasttask= 0)
 
-    with open("heuristic_Astar_41_E_11.pkl", "wb") as tf:
+    with open("heuristic_Astar_51_E_21.pkl", "wb") as tf:
         pickle.dump(heuristic_Astar, tf)
 '''
     reconst_path, arrive_time[1][0] = a_star_algorithm(graph, Task_list.loc[0, 'Start node'], Task_list.loc[0, 'End node'],

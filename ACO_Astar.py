@@ -44,17 +44,17 @@ Ht = 12
 safety_waiting_time= 12
 
 # Input task list
-Task_list = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
-Task_list_routing = pd.read_excel('Task_list_ACO.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
+Task_list = pd.read_excel('Task_list_E_22.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=141, dtype=object)
+Task_list_routing = pd.read_excel('Task_list_E_22.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=142, dtype=object)
 
 # Task_list = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist', usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=tasknumber, dtype=object)
 # Task_list_routing = pd.read_excel('Test_Task_list.xlsx', sheet_name='Tasklist_routing', index_col=0,usecols=[0,3,6,7,8,9,10,11], skiprows=0, nrows=tasknumber+1, dtype=object)
 
-
+#Task_list_Forklift = Task_list.loc[Task_list['Task ID'] == 0]
 Task_list_Forklift = Task_list.loc[Task_list['Task type'] == 'C04_CMD']
 Task_list_AGV = Task_list.loc[Task_list['Task type'] != 'C04_CMD']
 # input visibility graph
-visibility_graph=pd.read_excel('Visibility_graph.xlsx', sheet_name='Sheet1', usecols="B:EK", skiprows=0, nrows=141, dtype=object)
+visibility_graph=pd.read_excel('Visibility_graph_E_21.xlsx', sheet_name='Sheet1', usecols="B:JW", skiprows=0, nrows=141, dtype=object)
 #visibility_graph=pd.read_excel('Test_Visibility_graph.xlsx', sheet_name='Sheet1', usecols="A:EK", skiprows=0, nrows= tasknumber, dtype=object)
 visibility_graph=visibility_graph.values
 
@@ -409,11 +409,11 @@ class SCHEDULING(object):
 # for i in range(0,15):
 #     heuristic_Astar[-1][i]=0
 
-pickle_file = open("heuristic_Astar_41.pkl", "rb")
+pickle_file = open("heuristic_Astar_51_E_21.pkl", "rb")
 heuristic_Astar = pickle.load(pickle_file)
 
 heuristic_Astar[-1] = {}
-for i in range(0,41):
+for i in range(0,51):
     heuristic_Astar[-1][i]=0
 class Graph(object):
     def __init__(self, nodes, init_graph):
@@ -484,7 +484,7 @@ def a_star_algorithm(graph,start, stop,speed,TaskID,endtime_lasttask,wait_taskid
 
 
     arrive_time_lst = {}
-    for id in range(-1,150):
+    for id in range(-1,300):
         arrive_time_lst[id] = {}
 
     #Record the travel time for each task
@@ -598,8 +598,8 @@ if __name__ == '__main__':
     #     init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']
 
     # input road map with 41 points
-    Manufacturing_Graph = pd.read_excel('Graph.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=44,dtype=object)
-    nodes = list(range(0, 41))
+    Manufacturing_Graph = pd.read_excel('Graph_E_21.xlsx', sheet_name='Sheet2', usecols="A:C", skiprows=0, nrows=59,dtype=object)
+    nodes = list(range(0, 52))
 
     Node1 = Manufacturing_Graph['Node1'].tolist()
     Node2 = Manufacturing_Graph['Node2'].tolist()
@@ -608,7 +608,7 @@ if __name__ == '__main__':
     for node in nodes:
         init_graph[node] = {}
 
-    for i in range(0, 43):
+    for i in range(0, 58):
         init_graph[Node1[i]][Node2[i]] = Manufacturing_Graph.loc[i,'Distance']*3
 
 
@@ -645,6 +645,7 @@ if __name__ == '__main__':
     best_arrive_time_back={}
     best_conflicts = {}
     best_conflicts_back= {}
+    best_Task_assignment_result = {}
     iter = 1
 
     while True:
@@ -690,7 +691,7 @@ if __name__ == '__main__':
             arrive_time[vehicle] = {}
             arrive_time_back[vehicle] = {}
         for vehicle in range(1,7):
-            for id in range(-1,150):
+            for id in range(-1,300):
                 arrive_time[vehicle][id] = {}
                 arrive_time_back[vehicle][id] ={}
 
@@ -722,7 +723,7 @@ if __name__ == '__main__':
                 for point in range(0, len(reconst_path)):
                     current_nodetime = arrive_time[int((i+2)/3)][i][reconst_path[point]]
                     for v in range(1, 7):
-                        for t in range(0, 150):
+                        for t in range(0, 300):
                             if arrive_time[v][t] != {} and arrive_time[v][t].__contains__(reconst_path[point]):
                                 time_difference = abs(current_nodetime - arrive_time[v][t][reconst_path[point]])
                                 if time_difference < Ht  and t != i :
@@ -771,7 +772,7 @@ if __name__ == '__main__':
                         for point in range(0, len(reconst_path)):
                             current_nodetime = arrive_time[vehicle][Task_assignment_result[vehicle][j]][reconst_path[point]]
                             for v in range(1, 7):
-                                for t in range(0, 150):
+                                for t in range(0, 300):
                                     if arrive_time[v][t] != {} and arrive_time[v][t].__contains__(reconst_path[point]):
                                         time_difference = abs(current_nodetime - arrive_time[v][t][reconst_path[point]])
                                         if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
@@ -796,7 +797,7 @@ if __name__ == '__main__':
                         for point in range(0, len(reconst_path_back)):
                             current_nodetime_back = arrive_time_back[vehicle][Task_assignment_result[vehicle][j]][reconst_path_back[point]]
                             for v in range(1, 7):
-                                for t in range(0, 150):
+                                for t in range(0, 300):
                                     if arrive_time_back[v][t] != {} and arrive_time_back[v][t].__contains__(reconst_path_back[point]):
                                         time_difference = abs(current_nodetime - arrive_time_back[v][t][reconst_path_back[point]])
                                         if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
@@ -859,7 +860,7 @@ if __name__ == '__main__':
                         for point in range(0, len(reconst_path)):
                             current_nodetime = arrive_time[vehicle][Task_assignment_result[vehicle][j]][reconst_path[point]]
                             for v in range(1, 7):
-                                for t in range(0, 150):
+                                for t in range(0, 300):
                                     if arrive_time[v][t] != {} and arrive_time[v][t].__contains__(reconst_path[point]):
                                         time_difference = abs(current_nodetime - arrive_time[v][t][reconst_path[point]])
                                         if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
@@ -884,7 +885,7 @@ if __name__ == '__main__':
                         for point in range(0, len(reconst_path_back)):
                             current_nodetime_back = arrive_time_back[vehicle][Task_assignment_result[vehicle][j]][reconst_path_back[point]]
                             for v in range(1, 7):
-                                for t in range(0, 150):
+                                for t in range(0, 300):
                                     if arrive_time_back[v][t] != {} and arrive_time_back[v][t].__contains__(reconst_path_back[point]):
                                         time_difference = abs(current_nodetime - arrive_time_back[v][t][reconst_path_back[point]])
                                         if time_difference < Ht  and t != Task_assignment_result[vehicle][j] :
@@ -969,6 +970,7 @@ if __name__ == '__main__':
             best_arrive_time_back=arrive_time_back
             best_conflicts = NumberofConflicts
             best_conflicts_back = NumberofConflicts_back
+            best_Task_assignment_result = Task_assignment_result
 
         iter += 1
         if iter == 100:
